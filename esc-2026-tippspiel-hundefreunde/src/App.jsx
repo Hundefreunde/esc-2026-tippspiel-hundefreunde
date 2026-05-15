@@ -1,13 +1,65 @@
-import React, { useEffect, useMemo, useState } from "react";
+ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Sparkles, Users, RotateCcw, Save, BarChart3, Vote, Music2, Wifi, Crown } from "lucide-react";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "DEINE_SUPABASE_URL";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "DEIN_SUPABASE_ANON_KEY";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/*
+SUPABASE EINRICHTUNG — diesen SQL-Text in Supabase unter SQL Editor > New query einfügen und Run klicken:
+
+create table if not exists esc2026_players (
+  id uuid primary key default gen_random_uuid(),
+  name text unique not null,
+  created_at timestamptz default now()
+);
+
+create table if not exists esc2026_predictions (
+  player_name text primary key references esc2026_players(name) on delete cascade,
+  top1 text,
+  top2 text,
+  top3 text,
+  top4 text,
+  top5 text,
+  winner text,
+  last text,
+  updated_at timestamptz default now()
+);
+
+create table if not exists esc2026_results (
+  id int primary key default 1,
+  top1 text,
+  top2 text,
+  top3 text,
+  top4 text,
+  top5 text,
+  last text,
+  updated_at timestamptz default now(),
+  constraint one_result_row check (id = 1)
+);
+
+insert into esc2026_results (id) values (1) on conflict (id) do nothing;
+
+alter table esc2026_players enable row level security;
+alter table esc2026_predictions enable row level security;
+alter table esc2026_results enable row level security;
+
+create policy "read players" on esc2026_players for select using (true);
+create policy "add players" on esc2026_players for insert with check (true);
+create policy "delete players" on esc2026_players for delete using (true);
+
+create policy "read predictions" on esc2026_predictions for select using (true);
+create policy "add predictions" on esc2026_predictions for insert with check (true);
+create policy "edit predictions" on esc2026_predictions for update using (true);
+create policy "delete predictions" on esc2026_predictions for delete using (true);
+
+create policy "read results" on esc2026_results for select using (true);
+create policy "edit results" on esc2026_results for update using (true);
+*/
 
 const ENTRIES = [
   { country: "Albania", artist: "Alis", song: "Nân" },
@@ -48,11 +100,10 @@ const ENTRIES = [
 ];
 
 const emptyPrediction = { top1: "", top2: "", top3: "", top4: "", top5: "", winner: "", last: "" };
-
-function entryLabel(country) {
+const entryLabel = (country) => {
   const e = ENTRIES.find((x) => x.country === country);
   return e ? `${e.country} — ${e.artist} · “${e.song}”` : "";
-}
+};
 
 function playJingle(type = "save") {
   try {
@@ -71,90 +122,43 @@ function playJingle(type = "save") {
       osc.start(ctx.currentTime + i * 0.11);
       osc.stop(ctx.currentTime + i * 0.11 + 0.2);
     });
-  } catch {
-    // Sound optional.
-  }
+  } catch {}
 }
 
 function Confetti({ active }) {
-  const colors = ["#ff2fb3", "#00d4ff", "#ffe600", "#7cff6b", "#ffffff"];
-  return (
-    <AnimatePresence>
-      {active && (
-        <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
-          {Array.from({ length: 44 }, (_, i) => (
-            <motion.div
-              key={i}
-              initial={{ y: -40, x: `${Math.random() * 100}vw`, rotate: 0, opacity: 1 }}
-              animate={{ y: "105vh", rotate: 620, opacity: [1, 1, 0] }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.8 + Math.random() }}
-              className="absolute h-3 w-2 rounded-sm shadow-lg"
-              style={{ background: colors[i % colors.length] }}
-            />
-          ))}
-        </div>
-      )}
-    </AnimatePresence>
-  );
+  return <AnimatePresence>{active && <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">{Array.from({ length: 44 }, (_, i) => <motion.div key={i} initial={{ y: -40, x: `${Math.random() * 100}vw`, rotate: 0, opacity: 1 }} animate={{ y: "105vh", rotate: 620, opacity: [1, 1, 0] }} exit={{ opacity: 0 }} transition={{ duration: 1.8 + Math.random() }} className="absolute h-3 w-2 rounded-sm shadow-lg" style={{ background: ["#ff2fb3", "#00d4ff", "#ffe600", "#7cff6b", "#ffffff"][i % 5] }} />)}</div>}</AnimatePresence>;
 }
 
-function SelectEntry({ value, onChange, label, used = [] }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-semibold text-white/90">{label}</span>
-      <select
-        value={value || ""}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-4 focus:ring-fuchsia-300"
-      >
-        <option value="">Bitte auswählen</option>
-        {ENTRIES.map((entry) => (
-          <option key={entry.country} value={entry.country} disabled={used.includes(entry.country) && value !== entry.country}>
-            {entry.country} — {entry.artist} · {entry.song}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
+function SelectEntry({ value, onChange, label, used = [], disabled = false }) {
+  return <label className="block"><span className="mb-1 block text-sm font-semibold text-white/90">{label}</span><select disabled={disabled} value={value || ""} onChange={(e) => onChange(e.target.value)} className={`w-full rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-4 focus:ring-fuchsia-300 ${disabled ? "cursor-not-allowed opacity-70" : ""}`}><option value="">Bitte auswählen</option>{ENTRIES.map((entry) => <option key={entry.country} value={entry.country} disabled={used.includes(entry.country) && value !== entry.country}>{entry.country} — {entry.artist} · {entry.song}</option>)}</select></label>;
 }
 
 function scorePrediction(prediction, results) {
   const top5 = [results.top1, results.top2, results.top3, results.top4, results.top5].filter(Boolean);
   const rows = [];
   let total = 0;
-
   ["top1", "top2", "top3", "top4", "top5"].forEach((key, idx) => {
     const pick = prediction[key];
     let points = 0;
     let reason = "–";
     if (pick) {
-      if (results[key] === pick) {
-        points = 3;
-        reason = "korrekte Top-5-Position";
-      } else if (top5.includes(pick)) {
-        points = 2;
-        reason = "Land in Top 5";
-      } else {
-        reason = "nicht in Top 5";
-      }
+      if (results[key] === pick) { points = 3; reason = "korrekte Top-5-Position"; }
+      else if (top5.includes(pick)) { points = 2; reason = "Land in Top 5"; }
+      else reason = "nicht in Top 5";
     }
     total += points;
     rows.push({ label: `Platz ${idx + 1}`, pick, points, reason });
   });
-
   if (prediction.winner) {
     const points = prediction.winner === results.top1 ? 10 : 0;
     total += points;
     rows.push({ label: "Siegertipp", pick: prediction.winner, points, reason: points ? "richtiger Siegertipp" : "nicht Sieger" });
   }
-
   if (prediction.last) {
     const points = prediction.last === results.last ? 5 : 0;
     total += points;
     rows.push({ label: "Letzter Platz", pick: prediction.last, points, reason: points ? "richtiger letzter Platz" : "nicht letzter Platz" });
   }
-
   return { total, rows };
 }
 
@@ -167,34 +171,30 @@ export default function ESC2026Tippspiel() {
   const [view, setView] = useState("vote");
   const [status, setStatus] = useState("Live-Verbindung wird aufgebaut …");
   const [confetti, setConfetti] = useState(false);
-
+  const [isEditing, setIsEditing] = useState(true);
   const currentPrediction = predictions[currentName] || { ...emptyPrediction };
+  const [draftPrediction, setDraftPrediction] = useState({ ...emptyPrediction });
+
+  useEffect(() => {
+    setDraftPrediction(predictions[currentName] || { ...emptyPrediction });
+    setIsEditing(!currentName || !predictions[currentName]);
+  }, [currentName, predictions]);
 
   async function refreshAll() {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-      setStatus("Supabase-Daten fehlen noch in Vercel");
-      return;
-    }
     const [p, t, r] = await Promise.all([
       supabase.from("esc2026_players").select("name").order("created_at", { ascending: true }),
       supabase.from("esc2026_predictions").select("*"),
       supabase.from("esc2026_results").select("*").eq("id", 1).single(),
     ]);
-    if (p.error || t.error || r.error) {
-      setStatus("Nicht verbunden: Supabase-Daten prüfen");
-      return;
-    }
+    if (p.error || t.error || r.error) { setStatus("Nicht verbunden: Supabase-Daten prüfen"); return; }
     setPlayers((p.data || []).map((x) => x.name));
-    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, {
-      top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", winner: x.winner || "", last: x.last || ""
-    }])));
+    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, { top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", winner: x.winner || "", last: x.last || "" }])));
     setResults({ ...emptyPrediction, ...(r.data || {}) });
     setStatus("Live verbunden — Tipps werden für alle Geräte synchronisiert");
   }
 
   useEffect(() => {
     refreshAll();
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return;
     const channel = supabase.channel("esc2026-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_players" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_predictions" }, refreshAll)
@@ -213,8 +213,7 @@ export default function ESC2026Tippspiel() {
     setCurrentName(clean);
     setNameInput("");
     playJingle("save");
-    setConfetti(true);
-    setTimeout(() => setConfetti(false), 1700);
+    setConfetti(true); setTimeout(() => setConfetti(false), 1700);
     refreshAll();
   }
 
@@ -241,125 +240,9 @@ export default function ESC2026Tippspiel() {
     refreshAll();
   }
 
-  const leaderboard = useMemo(() => players
-    .map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, results) }))
-    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)), [players, predictions, results]);
-
-  const usedTop = [currentPrediction.top1, currentPrediction.top2, currentPrediction.top3, currentPrediction.top4, currentPrediction.top5].filter(Boolean);
+  const leaderboard = useMemo(() => players.map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, results) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)), [players, predictions, results]);
+  const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const resultTop = [results.top1, results.top2, results.top3, results.top4, results.top5].filter(Boolean);
 
-  return (
-    <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ff2fb3,_transparent_30%),radial-gradient(circle_at_top_right,_#00d4ff,_transparent_26%),linear-gradient(135deg,_#22115f,_#6616b8_45%,_#ff7a00)] p-4 text-white md:p-8">
-      <Confetti active={confetti} />
-      <div className="mx-auto max-w-6xl">
-        <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 overflow-hidden rounded-[2rem] border border-white/20 bg-white/15 p-6 shadow-2xl backdrop-blur">
-          <motion.div animate={{ scale: [1, 1.03, 1] }} transition={{ repeat: Infinity, duration: 2.8 }} className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold">
-            <Sparkles className="h-4 w-4" /> ESC 2026 · Live Tipp-Wette
-          </motion.div>
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h1 className="text-4xl font-black tracking-tight md:text-6xl">Douze Points Predictor</h1>
-              <p className="mt-2 max-w-2xl text-white/85">Mehrere Geräte, mehrere Orte, ein gemeinsamer Tippstand. Alle Tipps werden live gespeichert und synchronisiert.</p>
-            </div>
-            <div className="grid gap-2 text-sm md:text-right">
-              <div className="rounded-2xl bg-white/20 p-3"><Wifi className="mr-2 inline h-4 w-4" />{status}</div>
-              <div className="rounded-2xl bg-white/20 p-3"><Users className="mr-2 inline h-4 w-4" />{players.length}/8 Mitspieler:innen</div>
-            </div>
-          </div>
-        </motion.header>
-
-        <div className="mb-6 flex flex-wrap gap-2">
-          {[{ id: "vote", label: "Tipps", icon: Vote }, { id: "results", label: "Ergebnis", icon: Save }, { id: "score", label: "Auswertung", icon: BarChart3 }].map(({ id, label, icon: Icon }) => (
-            <Button key={id} onClick={() => { setView(id); playJingle("save"); }} className={`rounded-full px-5 ${view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}`}>
-              <Icon className="mr-2 h-4 w-4" />{label}
-            </Button>
-          ))}
-          <Button onClick={resetAll} className="rounded-full bg-black/25 px-5 text-white hover:bg-black/40"><RotateCcw className="mr-2 h-4 w-4" />Reset</Button>
-        </div>
-
-        {!currentName && (
-          <Card className="mb-6 rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur">
-            <CardContent className="p-6">
-              <h2 className="mb-2 text-2xl font-black">Einloggen zum Tippen</h2>
-              <p className="mb-4 text-white/80">Name eingeben oder vorhandenen Namen wählen. Korrekturen sind während der Show jederzeit möglich.</p>
-              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} placeholder="Dein Name" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" />
-                <Button onClick={login} className="rounded-2xl bg-fuchsia-500 px-8 py-6 text-white hover:bg-fuchsia-600"><Music2 className="mr-2 h-4 w-4" />Los geht’s</Button>
-              </div>
-              {players.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{players.map((p) => <Button key={p} onClick={() => { localStorage.setItem("esc2026_currentName", p); setCurrentName(p); }} className="rounded-full bg-white/20 text-white hover:bg-white/30">{p}</Button>)}</div>}
-            </CardContent>
-          </Card>
-        )}
-
-        {currentName && view === "vote" && (
-          <Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur">
-            <CardContent className="p-6">
-              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-3xl font-black">Tipps von {currentName}</h2>
-                  <p className="text-white/80">Top 5, separater Siegertipp und letzter Platz.</p>
-                </div>
-                <Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="rounded-full bg-white/20 text-white hover:bg-white/30">Person wechseln</Button>
-              </div>
-              <div className="grid gap-4 md:grid-cols-5">
-                {[1, 2, 3, 4, 5].map((n) => {
-                  const key = `top${n}`;
-                  return <motion.div whileHover={{ y: -4 }} key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry label={`${n}. Platz`} value={currentPrediction[key]} used={usedTop} onChange={(value) => updatePrediction({ ...currentPrediction, [key]: value })} /></motion.div>;
-                })}
-              </div>
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="rounded-3xl bg-yellow-300/25 p-4"><SelectEntry label="Wer gewinnt? · 10 Punkte" value={currentPrediction.winner} onChange={(value) => updatePrediction({ ...currentPrediction, winner: value })} /></div>
-                <div className="rounded-3xl bg-cyan-300/20 p-4"><SelectEntry label="Wer wird letzter? · 5 Punkte" value={currentPrediction.last} onChange={(value) => updatePrediction({ ...currentPrediction, last: value })} /></div>
-              </div>
-              <div className="mt-5 rounded-3xl bg-black/20 p-4">
-                <h3 className="mb-2 font-black">Aktueller Tippzettel</h3>
-                <div className="grid gap-2 text-sm md:grid-cols-2">
-                  {["top1", "top2", "top3", "top4", "top5", "winner", "last"].map((key) => <div key={key} className="rounded-2xl bg-white/10 p-3"><b>{key === "winner" ? "Siegertipp" : key === "last" ? "Letzter" : key.replace("top", "Platz ")}:</b> {entryLabel(currentPrediction[key]) || "–"}</div>)}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {view === "results" && (
-          <Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur">
-            <CardContent className="p-6">
-              <h2 className="text-3xl font-black">Offizielles Ergebnis eintragen</h2>
-              <p className="mb-5 text-white/80">Nach der Show die echten Top 5 und den letzten Platz auswählen.</p>
-              <div className="grid gap-4 md:grid-cols-5">
-                {[1, 2, 3, 4, 5].map((n) => {
-                  const key = `top${n}`;
-                  return <div key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry label={`Echter Platz ${n}`} value={results[key]} used={resultTop} onChange={(value) => updateResults({ ...results, [key]: value })} /></div>;
-                })}
-              </div>
-              <div className="mt-4 rounded-3xl bg-cyan-300/20 p-4 md:w-1/2"><SelectEntry label="Echter letzter Platz" value={results.last} onChange={(value) => updateResults({ ...results, last: value })} /></div>
-            </CardContent>
-          </Card>
-        )}
-
-        {view === "score" && (
-          <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-            <Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur">
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center gap-3"><Trophy className="h-8 w-8 text-yellow-200" /><h2 className="text-3xl font-black">Gewinner</h2></div>
-                {leaderboard[0] ? <motion.div onClick={() => { playJingle("winner"); setConfetti(true); setTimeout(() => setConfetti(false), 1800); }} whileTap={{ scale: .98 }} className="cursor-pointer rounded-3xl bg-yellow-300/25 p-5"><Crown className="mb-2 h-8 w-8" /><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="mt-1 text-2xl">{leaderboard[0].total} Punkte</div></motion.div> : <p>Noch keine Tipps vorhanden.</p>}
-                <div className="mt-4 space-y-2">{leaderboard.map((p, idx) => <div key={p.name} className="flex items-center justify-between rounded-2xl bg-white/10 p-3"><span>{idx + 1}. {p.name}</span><b>{p.total}</b></div>)}</div>
-              </CardContent>
-            </Card>
-            <Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur">
-              <CardContent className="p-6">
-                <h2 className="mb-4 text-3xl font-black">Wer lag wo richtig?</h2>
-                <div className="overflow-x-auto rounded-3xl bg-white/95 text-slate-900">
-                  <table className="w-full min-w-[900px] text-left text-sm">
-                    <thead className="bg-fuchsia-100 text-fuchsia-900"><tr><th className="p-3">Person</th><th className="p-3">Tipp</th><th className="p-3">Auswahl</th><th className="p-3">Treffer</th><th className="p-3 text-right">Punkte</th></tr></thead>
-                    <tbody>{leaderboard.flatMap((player) => player.rows.map((row, i) => <tr key={`${player.name}-${row.label}`} className="border-t border-slate-200"><td className="p-3 font-bold">{i === 0 ? player.name : ""}</td><td className="p-3">{row.label}</td><td className="p-3">{entryLabel(row.pick) || "–"}</td><td className="p-3">{row.reason}</td><td className="p-3 text-right font-black">{row.points}</td></tr>))}</tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
-    </main>
-  );
+  return <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ff2fb3,_transparent_30%),radial-gradient(circle_at_top_right,_#00d4ff,_transparent_26%),linear-gradient(135deg,_#22115f,_#6616b8_45%,_#ff7a00)] p-4 text-white md:p-8"><Confetti active={confetti} /><div className="mx-auto max-w-6xl"><motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 overflow-hidden rounded-[2rem] border border-white/20 bg-white/15 p-6 shadow-2xl backdrop-blur"><motion.div animate={{ scale: [1, 1.03, 1] }} transition={{ repeat: Infinity, duration: 2.8 }} className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold"><Sparkles className="h-4 w-4" /> ESC 2026 · Live Tipp-Wette</motion.div><div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><h1 className="text-4xl font-black tracking-tight md:text-6xl">Hundefreunde Wettstudio ESC 2026</h1><p className="mt-2 max-w-2xl text-white/85">Mehrere Geräte, mehrere Orte, ein gemeinsamer Tippstand. Alle Tipps werden live gespeichert und synchronisiert.</p></div><div className="grid gap-2 text-sm md:text-right"><div className="rounded-2xl bg-white/20 p-3"><Wifi className="mr-2 inline h-4 w-4" />{status}</div><div className="rounded-2xl bg-white/20 p-3"><Users className="mr-2 inline h-4 w-4" />{players.length}/8 Mitspieler:innen</div></div></div></motion.header><div className="mb-6 flex flex-wrap gap-2">{[{ id: "vote", label: "Tipps", icon: Vote }, { id: "results", label: "Ergebnis", icon: Save }, { id: "score", label: "Auswertung", icon: BarChart3 }].map(({ id, label, icon: Icon }) => <Button key={id} onClick={() => { setView(id); playJingle("save"); }} className={`rounded-full px-5 ${view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}`}><Icon className="mr-2 h-4 w-4" />{label}</Button>)}<Button onClick={resetAll} className="rounded-full bg-black/25 px-5 text-white hover:bg-black/40"><RotateCcw className="mr-2 h-4 w-4" />Reset</Button></div>{!currentName && <Card className="mb-6 rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur"><CardContent className="p-6"><h2 className="mb-2 text-2xl font-black">Einloggen zum Tippen</h2><p className="mb-4 text-white/80">Name eingeben oder vorhandenen Namen wählen. Korrekturen sind während der Show jederzeit möglich.</p><div className="grid gap-3 md:grid-cols-[1fr_auto]"><input value={nameInput} onChange={(e) => setNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} placeholder="Dein Name" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" /><Button onClick={login} className="rounded-2xl bg-fuchsia-500 px-8 py-6 text-white hover:bg-fuchsia-600"><Music2 className="mr-2 h-4 w-4" />Los geht’s</Button></div>{players.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{players.map((p) => <Button key={p} onClick={() => { localStorage.setItem("esc2026_currentName", p); setCurrentName(p); }} className="rounded-full bg-white/20 text-white hover:bg-white/30">{p}</Button>)}</div>}</CardContent></Card>}{currentName && view === "vote" && <Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur"><CardContent className="p-6"><div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h2 className="text-3xl font-black">Tipps von {currentName}</h2><p className="text-white/80">Top 5, separater Siegertipp und letzter Platz. Erst mit „Eingabe speichern“ wird die Auswertung aktualisiert.</p></div><div className="flex flex-wrap gap-2"><Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="rounded-full bg-white/20 text-white hover:bg-white/30">Person wechseln</Button>{isEditing ? <Button onClick={() => { updatePrediction(draftPrediction); setIsEditing(false); setConfetti(true); setTimeout(() => setConfetti(false), 1700); }} className="rounded-full bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Save className="mr-2 h-4 w-4" />Eingabe speichern</Button> : <Button onClick={() => setIsEditing(true)} className="rounded-full bg-yellow-300 px-6 text-slate-950 hover:bg-yellow-200">Bearbeiten</Button>}</div></div>{!isEditing && <div className="mb-4 rounded-3xl bg-lime-300/20 p-4 text-sm font-semibold">Gespeichert. Die Auswertung wurde aktualisiert. Über „Bearbeiten“ kannst du deine Tipps wieder ändern.</div>}<div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <motion.div whileHover={{ y: isEditing ? -4 : 0 }} key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry disabled={!isEditing} label={`${n}. Platz`} value={draftPrediction[key]} used={usedTop} onChange={(value) => setDraftPrediction({ ...draftPrediction, [key]: value })} /></motion.div>; })}</div><div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-3xl bg-yellow-300/25 p-4"><SelectEntry disabled={!isEditing} label="Wer gewinnt? · 10 Punkte" value={draftPrediction.winner} onChange={(value) => setDraftPrediction({ ...draftPrediction, winner: value })} /></div><div className="rounded-3xl bg-cyan-300/20 p-4"><SelectEntry disabled={!isEditing} label="Wer wird letzter? · 5 Punkte" value={draftPrediction.last} onChange={(value) => setDraftPrediction({ ...draftPrediction, last: value })} /></div></div><div className="mt-5 rounded-3xl bg-black/20 p-4"><h3 className="mb-2 font-black">Aktueller Tippzettel</h3><div className="grid gap-2 text-sm md:grid-cols-2">{["top1","top2","top3","top4","top5","winner","last"].map((key) => <div key={key} className="rounded-2xl bg-white/10 p-3"><b>{key === "winner" ? "Siegertipp" : key === "last" ? "Letzter" : key.replace("top", "Platz ")}:</b> {entryLabel(draftPrediction[key]) || "–"}</div>)}</div></div></CardContent></Card>}{view === "results" && <Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur"><CardContent className="p-6"><h2 className="text-3xl font-black">Offizielles Ergebnis eintragen</h2><p className="mb-5 text-white/80">Nach der Show die echten Top 5 und den letzten Platz auswählen.</p><div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry label={`Echter Platz ${n}`} value={results[key]} used={resultTop} onChange={(value) => updateResults({ ...results, [key]: value })} /></div>; })}</div><div className="mt-4 rounded-3xl bg-cyan-300/20 p-4 md:w-1/2"><SelectEntry label="Echter letzter Platz" value={results.last} onChange={(value) => updateResults({ ...results, last: value })} /></div></CardContent></Card>}{view === "score" && <div className="grid gap-6 lg:grid-cols-[360px_1fr]"><Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur"><CardContent className="p-6"><div className="mb-4 flex items-center gap-3"><Trophy className="h-8 w-8 text-yellow-200" /><h2 className="text-3xl font-black">Gewinner</h2></div>{leaderboard[0] ? <motion.div onClick={() => { playJingle("winner"); setConfetti(true); setTimeout(() => setConfetti(false), 1800); }} whileTap={{ scale: .98 }} className="cursor-pointer rounded-3xl bg-yellow-300/25 p-5"><Crown className="mb-2 h-8 w-8" /><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="mt-1 text-2xl">{leaderboard[0].total} Punkte</div></motion.div> : <p>Noch keine Tipps vorhanden.</p>}<div className="mt-4 space-y-2">{leaderboard.map((p, idx) => <div key={p.name} className="flex items-center justify-between rounded-2xl bg-white/10 p-3"><span>{idx + 1}. {p.name}</span><b>{p.total}</b></div>)}</div></CardContent></Card><Card className="rounded-[2rem] border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur"><CardContent className="p-6"><h2 className="mb-4 text-3xl font-black">Wer lag wo richtig?</h2><div className="overflow-x-auto rounded-3xl bg-white/95 text-slate-900"><table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-fuchsia-100 text-fuchsia-900"><tr><th className="p-3">Person</th><th className="p-3">Tipp</th><th className="p-3">Auswahl</th><th className="p-3">Treffer</th><th className="p-3 text-right">Punkte</th></tr></thead><tbody>{leaderboard.flatMap((player) => player.rows.map((row, i) => <tr key={`${player.name}-${row.label}`} className="border-t border-slate-200"><td className="p-3 font-bold">{i === 0 ? player.name : ""}</td><td className="p-3">{row.label}</td><td className="p-3">{entryLabel(row.pick) || "–"}</td><td className="p-3">{row.reason}</td><td className="p-3 text-right font-black">{row.points}</td></tr>))}</tbody></table></div></CardContent></Card></div>}</div></main>;
 }
