@@ -150,30 +150,13 @@ function DogCelebration({ dog }) {
 
   return (
     <AnimatePresence>
-      <motion.div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <motion.div className="pointer-events-none fixed inset-0 z-50 overflow-hidden bg-black/20 backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
         {Array.from({ length: 18 }).map((_, i) => <motion.span key={i} initial={{ y: -30, x: `${Math.random() * 100}vw`, opacity: 0 }} animate={{ y: "95vh", opacity: [0, 1, 0], rotate: 360 }} transition={{ duration: 1.6 + Math.random(), delay: Math.random() * 0.25 }} className="absolute text-xl">{i % 2 === 0 ? "🐾" : "✨"}</motion.span>)}
         <motion.div initial={{ x: "-70vw", y: 0, scale: 0.9 }} animate={path} exit={{ x: "75vw", opacity: 0 }} transition={{ duration: 1.9, ease: "easeInOut" }} className="absolute bottom-20 left-1/2">
           <CartoonDog dog={dog} size="hero" action={action} />
         </motion.div>
       </motion.div>
     </AnimatePresence>
-  );
-}
-
-function DogShowcase({ activeDog }) {
-  const actions = ["roll", "sit", "run", "bounce", "jump"];
-  const dogs = [DOGS[2], DOGS[0], DOGS[1], DOGS[2], DOGS[0]];
-  return (
-    <Card className="relative mt-4 overflow-hidden p-5">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,.12),transparent_26%),radial-gradient(circle_at_80%_60%,rgba(255,120,0,.13),transparent_32%)]" />
-      <div className="relative grid grid-cols-2 items-end gap-3 md:grid-cols-5">
-        {dogs.map((dog, idx) => (
-          <div key={`${dog.id}-${idx}`} className="flex min-h-[145px] items-end justify-center">
-            <CartoonDog dog={dog} action={activeDog?.id === dog.id && idx < 3 ? activeDog.action : actions[idx]} />
-          </div>
-        ))}
-      </div>
-    </Card>
   );
 }
 
@@ -330,11 +313,6 @@ export default function ESC2026Tippspiel() {
                   <div className="rounded-2xl bg-white/20 p-4 font-bold"><Users className="mr-2 inline h-4 w-4" />{players.length} Mitspieler:innen</div>
                 </div>
               </div>
-              <div className="absolute bottom-0 left-4 right-4 hidden h-36 items-end justify-center gap-12 md:flex">
-                <CartoonDog dog={DOGS[1]} size="hero" action="run" />
-                <CartoonDog dog={DOGS[0]} size="hero" action="idle" />
-                <CartoonDog dog={DOGS[2]} size="hero" action="sit" />
-              </div>
             </motion.header>
 
             <div className="mb-5 flex flex-wrap gap-2">
@@ -382,8 +360,6 @@ export default function ESC2026Tippspiel() {
               </Card>
             )}
 
-            {view === "vote" && <DogShowcase activeDog={activeDog} />}
-
             {view === "results" && (
               <Card className="p-6">
                 <h2 className="text-3xl font-black">Offizielles Ergebnis eintragen</h2>
@@ -407,7 +383,7 @@ export default function ESC2026Tippspiel() {
               </div>
             )}
 
-            <div className="mt-5 flex justify-between rounded-full bg-white/15 px-5 py-3 text-sm font-bold"><span><PawPrint className="mr-2 inline h-4 w-4" />Unbegrenzte Teilnahme · Alle sind willkommen!</span><span>Viel Spaß beim Tippen! 🦴</span></div>
+            <div className="mt-5 rounded-full bg-white/15 px-5 py-3 text-sm font-bold"><span><PawPrint className="mr-2 inline h-4 w-4" />Unbegrenzte Teilnahme · Alle sind willkommen!</span></div>
           </div>
 
           <aside className="xl:sticky xl:top-6 xl:self-start">
@@ -430,4 +406,3 @@ export default function ESC2026Tippspiel() {
     </main>
   );
 }
-
