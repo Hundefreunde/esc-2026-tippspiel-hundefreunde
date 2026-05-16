@@ -320,12 +320,21 @@ export default function ESC2026Tippspiel() {
 
   useEffect(() => {
     refreshAll();
+
+    // Realtime ist praktisch, aber je nach Supabase-Konfiguration nicht immer sofort aktiv.
+    // Deshalb aktualisiert die App zusätzlich automatisch alle 3 Sekunden.
+    const interval = setInterval(refreshAll, 3000);
+
     const channel = supabase.channel("esc2026-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_players" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_predictions" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_results" }, refreshAll)
       .subscribe();
-    return () => supabase.removeChannel(channel);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -333,8 +342,16 @@ export default function ESC2026Tippspiel() {
   }, [currentName, predictions]);
 
   async function selectPlayer(name) {
+    // Nur ansehen, nicht automatisch als diese Person bearbeiten.
+    setSelectedPlayerView(name);
+    setView("vote");
+  }
+
+  function editAsPlayer(name) {
+    // Bewusst als Person übernehmen/bearbeiten.
     localStorage.setItem("esc2026_currentName", name);
     setCurrentName(name);
+    setSelectedPlayerView(name);
     setView("vote");
     setDraftPrediction(predictions[name] || { ...emptyPrediction });
   }
@@ -437,6 +454,9 @@ export default function ESC2026Tippspiel() {
                     <Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="bg-white/20 text-white hover:bg-white/30"><Users className="mr-2 h-4 w-4" />Als anderen wählen</Button>
                     <Button onClick={() => updatePrediction(draftPrediction)} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Save className="mr-2 h-4 w-4" />Eingabe speichern</Button>
                   </div>
+                  <Button onClick={() => editAsPlayer(selectedPlayerView)} className="ml-auto bg-white/20 text-white hover:bg-white/30">
+                    Diese Tipps bearbeiten
+                  </Button>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-5">
@@ -482,7 +502,7 @@ export default function ESC2026Tippspiel() {
                   <Users className="h-7 w-7 text-cyan-200" />
                   <div>
                     <h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2>
-                    <p className="text-white/80">Alle Mitspieler:innen können diese Tipps live ansehen.</p>
+                    <p className="text-white/80">Alle Mitspieler:innen können diese Tipps live ansehen. Bearbeiten geht nur, wenn du den Namen bewusst übernimmst.</p>
                   </div>
                 </div>
 
@@ -524,10 +544,10 @@ export default function ESC2026Tippspiel() {
           <aside className="xl:sticky xl:top-6 xl:self-start">
             <Card className="min-h-[680px] p-5">
               <div className="mb-4 flex items-center gap-2"><Users className="h-6 w-6" /><h2 className="text-2xl font-black">Mitspieler:innen ({players.length})</h2></div>
-              <p className="mb-4 text-sm text-white/80">Alle Namen erscheinen sofort nach der Anmeldung. Zum Bearbeiten einfach Namen anklicken.</p>
+              <p className="mb-4 text-sm text-white/80">Alle Namen erscheinen automatisch auf jedem Gerät. Zum Anschauen einfach Namen anklicken.</p>
               <div className="max-h-[720px] space-y-2 overflow-auto pr-1">
                 {players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => (
-                  <button key={name} onClick={() => { setSelectedPlayerView(name); selectPlayer(name); }} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                  <button key={name} onClick={() => selectPlayer(name)} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div>
                     <div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div>
                     <ChevronsRight className="h-5 w-5 opacity-70" />
