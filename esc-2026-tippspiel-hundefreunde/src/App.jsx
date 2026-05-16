@@ -9,41 +9,31 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "DEIN_SUPABA
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const ENTRIES = [
-  { country: "Albania", artist: "Alis", song: "Nân" },
-  { country: "Armenia", artist: "SIMÓN", song: "Paloma Rumba" },
-  { country: "Australia", artist: "Delta Goodrem", song: "Eclipse" },
-  { country: "Austria", artist: "COSMÓ", song: "Tanzschein" },
-  { country: "Azerbaijan", artist: "JIVA", song: "Just Go" },
+  { country: "Denmark", artist: "Søren Torpegaard Lund", song: "Før Vi Går Hjem" },
+  { country: "Germany", artist: "Sarah Engels", song: "Fire" },
+  { country: "Israel", artist: "Noam Bettan", song: "Michelle" },
   { country: "Belgium", artist: "ESSYLA", song: "Dancing on the Ice" },
+  { country: "Albania", artist: "Alis", song: "Nân" },
+  { country: "Greece", artist: "Akylas", song: "Ferto" },
+  { country: "Ukraine", artist: "LELÉKA", song: "Ridnym" },
+  { country: "Australia", artist: "Delta Goodrem", song: "Eclipse" },
+  { country: "Serbia", artist: "LAVINA", song: "Kraj Mene" },
+  { country: "Malta", artist: "AIDAN", song: "Bella" },
+  { country: "Czechia", artist: "Daniel Zizka", song: "CROSSROADS" },
   { country: "Bulgaria", artist: "DARA", song: "Bangaranga" },
   { country: "Croatia", artist: "LELEK", song: "Andromeda" },
-  { country: "Cyprus", artist: "Antigoni", song: "JALLA" },
-  { country: "Czechia", artist: "Daniel Zizka", song: "CROSSROADS" },
-  { country: "Denmark", artist: "Søren Torpegaard Lund", song: "Før Vi Går Hjem" },
-  { country: "Estonia", artist: "Vanilla Ninja", song: "Too Epic To Be True" },
-  { country: "Finland", artist: "Linda Lampenius x Pete Parkkonen", song: "Liekinheitin" },
-  { country: "France", artist: "Monroe", song: "Regarde !" },
-  { country: "Georgia", artist: "Bzikebi", song: "On Replay" },
-  { country: "Germany", artist: "Sarah Engels", song: "Fire" },
-  { country: "Greece", artist: "Akylas", song: "Ferto" },
-  { country: "Israel", artist: "Noam Bettan", song: "Michelle" },
-  { country: "Italy", artist: "Sal Da Vinci", song: "Per Sempre Sì" },
-  { country: "Latvia", artist: "Atvara", song: "Ēnā" },
-  { country: "Lithuania", artist: "Lion Ceccah", song: "Sólo Quiero Más" },
-  { country: "Luxembourg", artist: "Eva Marija", song: "Mother Nature" },
-  { country: "Malta", artist: "AIDAN", song: "Bella" },
-  { country: "Moldova", artist: "Satoshi", song: "Viva, Moldova!" },
-  { country: "Montenegro", artist: "Tamara Živković", song: "Nova Zora" },
-  { country: "Norway", artist: "JONAS LOVV", song: "YA YA YA" },
-  { country: "Poland", artist: "ALICJA", song: "Pray" },
-  { country: "Portugal", artist: "Bandidos do Cante", song: "Rosa" },
-  { country: "Romania", artist: "Alexandra Căpitănescu", song: "Choke Me" },
-  { country: "San Marino", artist: "SENHIT", song: "Superstar" },
-  { country: "Serbia", artist: "LAVINA", song: "Kraj Mene" },
-  { country: "Sweden", artist: "FELICIA", song: "My System" },
-  { country: "Switzerland", artist: "Veronica Fusaro", song: "Alice" },
-  { country: "Ukraine", artist: "LELÉKA", song: "Ridnym" },
   { country: "United Kingdom", artist: "LOOK MUM NO COMPUTER", song: "Eins, Zwei, Drei" },
+  { country: "France", artist: "Monroe", song: "Regarde!" },
+  { country: "Moldova", artist: "Satoshi", song: "Viva, Moldova!" },
+  { country: "Finland", artist: "Linda Lampenius x Pete Parkkonen", song: "Liekinheitin" },
+  { country: "Poland", artist: "ALICJA", song: "Pray" },
+  { country: "Lithuania", artist: "Lion Ceccah", song: "Sólo Quiero Más" },
+  { country: "Sweden", artist: "FELICIA", song: "My System" },
+  { country: "Cyprus", artist: "Antigoni", song: "JALLA" },
+  { country: "Italy", artist: "Sal Da Vinci", song: "Per Sempre Sì" },
+  { country: "Norway", artist: "JONAS LOVV", song: "YA YA YA" },
+  { country: "Romania", artist: "Alexandra Căpitănescu", song: "Choke Me" },
+  { country: "Austria", artist: "COSMÓ", song: "Tanzschein" },
 ];
 
 const emptyPrediction = { top1: "", top2: "", top3: "", top4: "", top5: "", winner: "", last: "" };
@@ -289,6 +279,7 @@ export default function ESC2026Tippspiel() {
   const [view, setView] = useState("vote");
   const [status, setStatus] = useState("Live-Verbindung wird aufgebaut …");
   const [draftPrediction, setDraftPrediction] = useState({ ...emptyPrediction });
+  const [draftDirty, setDraftDirty] = useState(false);
   const [activeDog, setActiveDog] = useState(null);
   const [dogMessage, setDogMessage] = useState("");
 
@@ -301,6 +292,11 @@ export default function ESC2026Tippspiel() {
       setActiveDog(null);
       setDogMessage("");
     }, 2300);
+  }
+
+  function setDraftField(key, value) {
+    setDraftDirty(true);
+    setDraftPrediction((prev) => ({ ...prev, [key]: value }));
   }
 
   async function refreshAll() {
@@ -371,8 +367,10 @@ export default function ESC2026Tippspiel() {
   }, []);
 
   useEffect(() => {
-    setDraftPrediction(predictions[currentName] || { ...emptyPrediction });
-  }, [currentName, predictions]);
+    if (!draftDirty) {
+      setDraftPrediction(predictions[currentName] || { ...emptyPrediction });
+    }
+  }, [currentName, predictions, draftDirty]);
 
   async function selectPlayer(name) {
     // Nur ansehen, nicht automatisch als diese Person bearbeiten.
@@ -386,6 +384,7 @@ export default function ESC2026Tippspiel() {
     setCurrentName(name);
     setSelectedPlayerView(name);
     setView("vote");
+    setDraftDirty(false);
     setDraftPrediction(predictions[name] || { ...emptyPrediction });
   }
 
@@ -405,11 +404,34 @@ export default function ESC2026Tippspiel() {
 
   async function updatePrediction(next) {
     if (!currentName) return;
-    setPredictions({ ...predictions, [currentName]: next });
-    await supabase.from("esc2026_predictions").upsert({ player_name: currentName, ...next, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
+
+    const cleaned = {
+      top1: next.top1 || "",
+      top2: next.top2 || "",
+      top3: next.top3 || "",
+      top4: next.top4 || "",
+      top5: next.top5 || "",
+      winner: next.winner || "",
+      last: next.last || "",
+    };
+
+    setPredictions((prev) => ({ ...prev, [currentName]: cleaned }));
+    setDraftPrediction(cleaned);
+    setDraftDirty(false);
+
+    const { error } = await supabase
+      .from("esc2026_predictions")
+      .upsert({ player_name: currentName, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
+
+    if (error) {
+      setStatus(`Speichern fehlgeschlagen: ${error.message}`);
+      setDraftDirty(true);
+      return;
+    }
+
     playJingle("save");
     showDog("Tipp gespeichert!");
-    refreshAll();
+    await refreshAll();
   }
 
   async function updateResults(next) {
@@ -495,13 +517,13 @@ export default function ESC2026Tippspiel() {
                 <div className="grid gap-4 md:grid-cols-5">
                   {[1, 2, 3, 4, 5].map((n) => {
                     const key = `top${n}`;
-                    return <motion.div whileHover={{ y: -4 }} key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry label={`${n}. Platz`} value={draftPrediction[key]} used={usedTop} onChange={(value) => setDraftPrediction({ ...draftPrediction, [key]: value })} /></motion.div>;
+                    return <motion.div whileHover={{ y: -4 }} key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry label={`${n}. Platz`} value={draftPrediction[key]} used={usedTop} onChange={(value) => setDraftField(key, value)} /></motion.div>;
                   })}
                 </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-3xl bg-yellow-300/20 p-4"><SelectEntry label="Wer gewinnt? · 10 Punkte" value={draftPrediction.winner} onChange={(value) => setDraftPrediction({ ...draftPrediction, winner: value })} /></div>
-                  <div className="rounded-3xl bg-cyan-300/20 p-4"><SelectEntry label="Wer wird letzter? · 5 Punkte" value={draftPrediction.last} onChange={(value) => setDraftPrediction({ ...draftPrediction, last: value })} /></div>
+                  <div className="rounded-3xl bg-yellow-300/20 p-4"><SelectEntry label="Wer gewinnt? · 10 Punkte" value={draftPrediction.winner} onChange={(value) => setDraftField("winner", value)} /></div>
+                  <div className="rounded-3xl bg-cyan-300/20 p-4"><SelectEntry label="Wer wird letzter? · 5 Punkte" value={draftPrediction.last} onChange={(value) => setDraftField("last", value)} /></div>
                 </div>
               </Card>
             )}
