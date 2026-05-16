@@ -38,6 +38,16 @@ const ENTRIES = [
 
 const emptyPrediction = { top1: "", top2: "", top3: "", top4: "", top5: "", winner: "", last: "" };
 
+const OFFICIAL_RESULTS = {
+  top1: "Moldova",
+  top2: "Bulgaria",
+  top3: "Australia",
+  top4: "Denmark",
+  top5: "France",
+  winner: "Moldova",
+  last: "United Kingdom",
+};
+
 const DOG_VARIANTS = [
   { id: "dackel-1", image: "/dogs/Dackel-1.png" },
   { id: "dackel-2", image: "/dogs/Dackel-2.png" },
@@ -272,7 +282,7 @@ function scorePrediction(prediction, results) {
 export default function ESC2026Tippspiel() {
   const [players, setPlayers] = useState([]);
   const [predictions, setPredictions] = useState({});
-  const [results, setResults] = useState({ ...emptyPrediction });
+  const [results, setResults] = useState({ ...OFFICIAL_RESULTS });
   const [currentName, setCurrentName] = useState(() => localStorage.getItem("esc2026_currentName") || "");
   const [selectedPlayerView, setSelectedPlayerView] = useState("");
   const [nameInput, setNameInput] = useState("");
@@ -338,10 +348,17 @@ export default function ESC2026Tippspiel() {
     }
 
     if (!r.data) {
-      await supabase.from("esc2026_results").upsert({ id: 1, ...emptyPrediction }, { onConflict: "id" });
-      setResults({ ...emptyPrediction });
+      await supabase.from("esc2026_results").upsert({ id: 1, ...OFFICIAL_RESULTS }, { onConflict: "id" });
+      setResults({ ...OFFICIAL_RESULTS });
     } else {
-      setResults({ ...emptyPrediction, ...r.data });
+      const savedResults = { ...OFFICIAL_RESULTS, ...r.data };
+      const isStillEmpty = !savedResults.top1 && !savedResults.top2 && !savedResults.top3 && !savedResults.top4 && !savedResults.top5 && !savedResults.last;
+      if (isStillEmpty) {
+        await supabase.from("esc2026_results").update({ ...OFFICIAL_RESULTS, updated_at: new Date().toISOString() }).eq("id", 1);
+        setResults({ ...OFFICIAL_RESULTS });
+      } else {
+        setResults(savedResults);
+      }
     }
 
     setStatus("Verbunden mit Supabase ✓");
@@ -435,18 +452,28 @@ export default function ESC2026Tippspiel() {
   }
 
   async function updateResults(next) {
-    setResults(next);
-    await supabase.from("esc2026_results").update({ ...next, updated_at: new Date().toISOString() }).eq("id", 1);
+    const cleaned = { ...OFFICIAL_RESULTS, ...next };
+    setResults(cleaned);
+    const { error } = await supabase.from("esc2026_results").upsert({ id: 1, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    if (error) {
+      setStatus(`Ergebnis konnte nicht gespeichert werden: ${error.message}`);
+      return;
+    }
     playJingle("save");
     showDog("Ergebnis aktualisiert!");
     refreshAll();
+  }
+
+  async function applyOfficialResults() {
+    await updateResults(OFFICIAL_RESULTS);
+    setView("score");
   }
 
   async function resetAll() {
     if (!confirm("Wirklich alles löschen?")) return;
     await supabase.from("esc2026_predictions").delete().neq("player_name", "");
     await supabase.from("esc2026_players").delete().neq("name", "");
-    await supabase.from("esc2026_results").update({ ...emptyPrediction }).eq("id", 1);
+    await supabase.from("esc2026_results").update({ ...OFFICIAL_RESULTS }).eq("id", 1);
     localStorage.removeItem("esc2026_currentName");
     setCurrentName("");
     setPlayers([]);
@@ -530,10 +557,15 @@ export default function ESC2026Tippspiel() {
 
             {view === "results" && (
               <Card className="p-6">
-                <h2 className="text-3xl font-black">Offizielles Ergebnis eintragen</h2>
-                <p className="mb-5 text-white/80">Nach der Show die echten Top 5 und den letzten Platz auswählen.</p>
-                <div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry label={`Echter Platz ${n}`} value={results[key]} used={resultTop} onChange={(value) => updateResults({ ...results, [key]: value })} /></div>; })}</div>
-                <div className="mt-4 rounded-3xl bg-cyan-300/20 p-4 md:w-1/2"><SelectEntry label="Echter letzter Platz" value={results.last} onChange={(value) => updateResults({ ...results, last: value })} /></div>
+                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h2 className="text-3xl font-black">Offizielles Ergebnis</h2>
+                    <p className="text-white/80">Das Ergebnis ist fest hinterlegt. Klicke einmal auf „Offizielles Ergebnis speichern“, dann wird die Auswertung für alle Geräte aktualisiert.</p>
+                  </div>
+                  <Button onClick={applyOfficialResults} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Save className="mr-2 h-4 w-4" />Offizielles Ergebnis speichern</Button>
+                </div>
+                <div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">Platz {n}</div><div className="min-h-[96px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(results[key])}</div></div>; })}</div>
+                <div className="mt-4 rounded-3xl bg-cyan-300/20 p-4 md:w-1/2"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(results.last)}</div></div>
               </Card>
             )}
 
