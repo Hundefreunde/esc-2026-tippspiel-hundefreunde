@@ -283,6 +283,7 @@ export default function ESC2026Tippspiel() {
   const [predictions, setPredictions] = useState({});
   const [results, setResults] = useState({ ...emptyPrediction });
   const [currentName, setCurrentName] = useState(() => localStorage.getItem("esc2026_currentName") || "");
+  const [selectedPlayerView, setSelectedPlayerView] = useState("");
   const [nameInput, setNameInput] = useState("");
   const [view, setView] = useState("vote");
   const [status, setStatus] = useState("Live-Verbindung wird aufgebaut …");
@@ -383,6 +384,7 @@ export default function ESC2026Tippspiel() {
 
   const leaderboard = useMemo(() => players.map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, results) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)), [players, predictions, results]);
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
+  const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
   const resultTop = [results.top1, results.top2, results.top3, results.top4, results.top5].filter(Boolean);
 
   return (
@@ -474,6 +476,48 @@ export default function ESC2026Tippspiel() {
               </div>
             )}
 
+            {selectedPlayerView && (
+              <Card className="mt-5 p-6">
+                <div className="mb-5 flex items-center gap-3">
+                  <Users className="h-7 w-7 text-cyan-200" />
+                  <div>
+                    <h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2>
+                    <p className="text-white/80">Alle Mitspieler:innen können diese Tipps live ansehen.</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-5">
+                  {[1,2,3,4,5].map((n) => {
+                    const key = `top${n}`;
+                    return (
+                      <div key={key} className="rounded-3xl bg-white/10 p-4">
+                        <div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div>
+                        <div className="rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900 min-h-[90px]">
+                          {entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-3xl bg-yellow-300/20 p-4">
+                    <div className="mb-2 text-sm font-black text-white/80">Siegertipp</div>
+                    <div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">
+                      {entryLabel(viewedPrediction.winner) || "Noch kein Tipp"}
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl bg-cyan-300/20 p-4">
+                    <div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div>
+                    <div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">
+                      {entryLabel(viewedPrediction.last) || "Noch kein Tipp"}
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
+
             <div className="mt-5 rounded-full bg-white/15 px-5 py-3 text-sm font-bold"><span><PawPrint className="mr-2 inline h-4 w-4" />Unbegrenzte Teilnahme · Alle sind willkommen!</span></div>
           </div>
 
@@ -483,7 +527,7 @@ export default function ESC2026Tippspiel() {
               <p className="mb-4 text-sm text-white/80">Alle Namen erscheinen sofort nach der Anmeldung. Zum Bearbeiten einfach Namen anklicken.</p>
               <div className="max-h-[720px] space-y-2 overflow-auto pr-1">
                 {players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => (
-                  <button key={name} onClick={() => selectPlayer(name)} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                  <button key={name} onClick={() => { setSelectedPlayerView(name); selectPlayer(name); }} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div>
                     <div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div>
                     <ChevronsRight className="h-5 w-5 opacity-70" />
