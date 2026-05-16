@@ -47,13 +47,19 @@ const ENTRIES = [
 
 const emptyPrediction = { top1: "", top2: "", top3: "", top4: "", top5: "", winner: "", last: "" };
 
-const DOGS = [
-  { id: "bulldog", breed: "Englische Bulldogge", body: "from-amber-100 via-orange-300 to-amber-600", ear: "bg-amber-700", spot: "bg-white/85", scale: "scale-x-110", head: "from-white via-amber-100 to-orange-400" },
-  { id: "whippet", breed: "Whippet", body: "from-stone-100 via-amber-200 to-yellow-600", ear: "bg-amber-700", spot: "bg-white/70", scale: "scale-x-125", head: "from-white via-stone-100 to-amber-300" },
-  { id: "dackel", breed: "Schwarzer Kurzhaardackel", body: "from-zinc-950 via-zinc-800 to-black", ear: "bg-black", spot: "bg-orange-500", scale: "scale-x-125", head: "from-zinc-900 via-zinc-800 to-black" },
+const DOG_VARIANTS = [
+  { id: "dackel-1", image: "/dogs/Dackel-1.png" },
+  { id: "dackel-2", image: "/dogs/Dackel-2.png" },
+  { id: "dackel-3", image: "/dogs/Dackel-3.png" },
+  { id: "whippet-1", image: "/dogs/Whippet-1.png" },
+  { id: "whippet-2", image: "/dogs/Whippet-2.png" },
+  { id: "whippet-3", image: "/dogs/Whippet-3.png" },
+  { id: "bulldogge-1", image: "/dogs/Bulldogge-1.png" },
+  { id: "bulldogge-2", image: "/dogs/Bulldogge-2.png" },
+  { id: "bulldogge-3", image: "/dogs/Bulldogge-3.png" },
 ];
 
-const DOG_ACTIONS = ["run", "flip", "sit", "jump", "roll", "bounce"];
+const CELEBRATION_EFFECTS = ["confetti", "fireworks", "sparkles", "lightbeams"];
 
 function entryLabel(country) {
   const e = ENTRIES.find((x) => x.country === country);
@@ -104,56 +110,135 @@ function SelectEntry({ value, onChange, label, used = [] }) {
   );
 }
 
-function CartoonDog({ dog, size = "normal", action = "idle" }) {
-  const big = size === "hero";
-  const w = big ? "w-52 h-32 md:w-64 md:h-40" : "w-40 h-28 md:w-48 md:h-32";
-  const isDark = dog.id === "dackel";
-  const bodyMotion =
-    action === "flip" ? { rotate: [0, 360], y: [0, -56, 0], scale: [1, 1.12, 1] } :
-    action === "run" ? { x: [-34, 28, -8, 0], y: [0, -10, 0, -6, 0], rotate: [-4, 3, -2, 0] } :
-    action === "sit" ? { y: [0, 12, 0], scaleY: [1, 0.88, 1], rotate: [0, -3, 0] } :
-    action === "jump" ? { y: [0, -70, 0], rotate: [0, -10, 8, 0], scale: [1, 1.08, 1] } :
-    action === "roll" ? { rotate: [0, -180, -360], x: [0, 26, 0], y: [0, 18, 0] } :
-    action === "bounce" ? { y: [0, -28, 0, -12, 0], scale: [1, 1.05, 1, 1.03, 1] } :
-    { y: [0, -8, 0] };
-
+function CartoonDog({ dog }) {
   return (
-    <motion.div animate={bodyMotion} transition={{ duration: action === "idle" ? 2.4 : 1.25, repeat: action === "idle" ? Infinity : 0, ease: "easeInOut" }} className={`relative ${w} ${dog.scale} drop-shadow-2xl`}>
-      <div className="absolute -bottom-1 left-8 h-6 w-32 rounded-full bg-black/25 blur-md md:w-40" />
-      <div className={`absolute left-9 top-11 h-16 w-32 rounded-[48%] bg-gradient-to-br ${dog.body} shadow-[inset_-18px_-20px_22px_rgba(0,0,0,.22),inset_12px_12px_20px_rgba(255,255,255,.35)] md:h-20 md:w-40`} />
-      <motion.div animate={{ rotate: [0, 22, -12, 0] }} transition={{ repeat: Infinity, duration: 0.8 }} className={`absolute right-1 top-10 h-4 w-18 origin-left rounded-full bg-gradient-to-r ${isDark ? "from-black via-zinc-800 to-orange-500" : "from-amber-500 via-amber-300 to-yellow-100"} shadow-lg`} />
-      <motion.div animate={{ rotate: [20, -22, 18] }} transition={{ repeat: Infinity, duration: 0.48 }} className={`absolute left-20 bottom-3 h-14 w-5 rounded-full bg-gradient-to-b ${dog.body} shadow-lg`} />
-      <motion.div animate={{ rotate: [-18, 24, -18] }} transition={{ repeat: Infinity, duration: 0.45 }} className={`absolute left-34 bottom-3 h-14 w-5 rounded-full bg-gradient-to-b ${dog.body} shadow-lg`} />
-      <motion.div animate={{ rotate: [-12, 18, -12] }} transition={{ repeat: Infinity, duration: 0.5 }} className={`absolute left-28 bottom-2 h-12 w-4 rounded-full bg-gradient-to-b ${dog.body} shadow-lg`} />
-      <div className={`absolute left-3 top-7 h-20 w-20 rounded-full bg-gradient-to-br ${dog.head} shadow-[inset_-12px_-15px_20px_rgba(0,0,0,.18),inset_10px_8px_18px_rgba(255,255,255,.52)] md:h-24 md:w-24`} />
-      <div className={`absolute left-2 top-4 h-10 w-8 -rotate-12 rounded-full ${dog.ear} shadow-lg`} />
-      <div className={`absolute left-16 top-4 h-10 w-8 rotate-12 rounded-full ${dog.ear} shadow-lg`} />
-      <div className="absolute left-9 top-12 h-3.5 w-3.5 rounded-full bg-black ring-2 ring-white/50" />
-      <div className="absolute left-16 top-12 h-3.5 w-3.5 rounded-full bg-black ring-2 ring-white/50" />
-      <div className="absolute left-10 top-16 h-5 w-8 rounded-full bg-black/90" />
-      <div className="absolute left-11 top-[4.6rem] h-3 w-9 rounded-b-full bg-pink-400" />
-      <div className={`absolute left-17 top-9 h-9 w-11 rounded-full ${dog.spot} blur-[.5px]`} />
-      {dog.id === "bulldog" && <><div className="absolute left-6 top-[4.6rem] h-2 w-9 rounded-full bg-black/20" /><div className="absolute left-10 top-[5.2rem] h-2 w-10 rounded-full bg-black/20" /></>}
-    </motion.div>
+    <img
+      src={dog.image}
+      alt=""
+      className="h-auto max-h-[58vh] w-auto max-w-[72vw] select-none object-contain drop-shadow-[0_30px_45px_rgba(0,0,0,.55)]"
+      draggable="false"
+    />
   );
 }
 
-function DogCelebration({ dog }) {
+function CelebrationEffect({ type }) {
+  if (type === "fireworks") {
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute h-2 w-2 rounded-full bg-white shadow-[0_0_24px_rgba(255,255,255,.95)]"
+            style={{ left: `${12 + (i * 10) % 82}%`, top: `${12 + (i * 17) % 62}%` }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.1, 0], opacity: [0, 1, 0] }}
+            transition={{ duration: 1.25, delay: i * 0.08 }}
+          >
+            {Array.from({ length: 10 }).map((_, j) => (
+              <motion.span
+                key={j}
+                className="absolute left-1/2 top-1/2 h-1 w-12 origin-left rounded-full bg-gradient-to-r from-yellow-200 via-fuchsia-300 to-transparent"
+                style={{ rotate: `${j * 36}deg` }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: [0, 1, 0] }}
+                transition={{ duration: 1.2, delay: i * 0.08 }}
+              />
+            ))}
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
+
+  if (type === "lightbeams") {
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute left-1/2 top-1/2 h-[150vh] w-16 origin-bottom rounded-full bg-gradient-to-t from-white/30 via-fuchsia-300/20 to-transparent blur-xl"
+            style={{ rotate: `${i * 45}deg` }}
+            initial={{ opacity: 0, scaleY: 0.25 }}
+            animate={{ opacity: [0, 0.8, 0], scaleY: [0.25, 1, 0.4] }}
+            transition={{ duration: 1.8, delay: i * 0.04 }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (type === "sparkles") {
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 70 }).map((_, i) => (
+          <motion.span
+            key={i}
+            className="absolute text-2xl"
+            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+            initial={{ opacity: 0, scale: 0, rotate: 0 }}
+            animate={{ opacity: [0, 1, 0], scale: [0, 1.3, 0], rotate: 180 }}
+            transition={{ duration: 1.5, delay: Math.random() * 0.7 }}
+          >
+            ✨
+          </motion.span>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {Array.from({ length: 95 }).map((_, i) => (
+        <motion.span
+          key={i}
+          initial={{ y: -80, x: `${Math.random() * 100}vw`, opacity: 0, rotate: 0, scale: 0.6 }}
+          animate={{ y: "105vh", opacity: [0, 1, 1, 0], rotate: 720, scale: [0.6, 1, 0.8] }}
+          transition={{ duration: 1.7 + Math.random() * 1, delay: Math.random() * 0.35, ease: "easeOut" }}
+          className="absolute h-4 w-4 rounded-sm"
+          style={{ background: ["#ff4fd8", "#ffe45e", "#39d7ff", "#a3ff53", "#ff8a3d"][i % 5] }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function DogCelebration({ dog, message }) {
   if (!dog) return null;
-  const action = dog.action || "run";
-  const path =
-    action === "flip" ? { x: ["-70vw", "-10vw", "0vw", "12vw"], y: [0, -20, -95, 0], rotate: [0, 0, 360, 720], scale: [0.9, 1.15, 1.22, 1.05] } :
-    action === "roll" ? { x: ["-70vw", "-20vw", "8vw", "25vw"], y: [0, 20, 20, 0], rotate: [0, -180, -360, -540], scale: [0.9, 1.08, 1.08, 1] } :
-    action === "jump" ? { x: ["-65vw", "-15vw", "8vw", "22vw"], y: [0, -80, -30, 0], rotate: [0, -10, 12, 0], scale: [0.9, 1.22, 1.1, 1] } :
-    action === "sit" ? { x: ["-55vw", "-8vw", "0vw"], y: [0, 0, 18], rotate: [0, 0, -4], scale: [0.9, 1.15, 1.05] } :
-    { x: ["-70vw", "-20vw", "10vw", "30vw"], y: [0, -10, 0, -8], rotate: [-6, 4, -2, 0], scale: [0.9, 1.15, 1.05, 1] };
 
   return (
     <AnimatePresence>
-      <motion.div className="pointer-events-none fixed inset-0 z-50 overflow-hidden bg-black/20 backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-        {Array.from({ length: 18 }).map((_, i) => <motion.span key={i} initial={{ y: -30, x: `${Math.random() * 100}vw`, opacity: 0 }} animate={{ y: "95vh", opacity: [0, 1, 0], rotate: 360 }} transition={{ duration: 1.6 + Math.random(), delay: Math.random() * 0.25 }} className="absolute text-xl">{i % 2 === 0 ? "🐾" : "✨"}</motion.span>)}
-        <motion.div initial={{ x: "-70vw", y: 0, scale: 0.9 }} animate={path} exit={{ x: "75vw", opacity: 0 }} transition={{ duration: 1.9, ease: "easeInOut" }} className="absolute bottom-20 left-1/2">
-          <CartoonDog dog={dog} size="hero" action={action} />
+      <motion.div
+        className="pointer-events-none fixed inset-0 z-[999] flex items-center justify-center overflow-hidden bg-black/45 backdrop-blur-sm"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <CelebrationEffect type={dog.effect || "confetti"} />
+        <motion.div
+          initial={{ scale: 0.72, opacity: 0, y: 40 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.84, opacity: 0, y: -35 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className="relative flex flex-col items-center"
+        >
+          <motion.img
+            src={dog.image}
+            alt=""
+            draggable="false"
+            initial={{ rotate: -4, scale: 0.96 }}
+            animate={{ rotate: [0, -2, 2, 0], scale: [0.96, 1.02, 1] }}
+            transition={{ duration: 1.15 }}
+            className="max-h-[72vh] max-w-[78vw] select-none object-contain drop-shadow-[0_25px_50px_rgba(0,0,0,0.65)]"
+          />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ delay: 0.08 }}
+            className="mt-5 rounded-full border border-white/20 bg-white/15 px-7 py-3 text-center text-2xl font-black tracking-tight text-white shadow-2xl backdrop-blur-xl"
+          >
+            {message}
+          </motion.div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -203,12 +288,17 @@ export default function ESC2026Tippspiel() {
   const [status, setStatus] = useState("Live-Verbindung wird aufgebaut …");
   const [draftPrediction, setDraftPrediction] = useState({ ...emptyPrediction });
   const [activeDog, setActiveDog] = useState(null);
-  const [toast, setToast] = useState("");
+  const [dogMessage, setDogMessage] = useState("");
 
-  function showDog() {
-    const dog = DOGS[Math.floor(Math.random() * DOGS.length)];
-    setActiveDog({ ...dog, action: DOG_ACTIONS[Math.floor(Math.random() * DOG_ACTIONS.length)] });
-    setTimeout(() => setActiveDog(null), 2100);
+  function showDog(message = "Gespeichert!") {
+    const dog = DOG_VARIANTS[Math.floor(Math.random() * DOG_VARIANTS.length)];
+    const effect = CELEBRATION_EFFECTS[Math.floor(Math.random() * CELEBRATION_EFFECTS.length)];
+    setDogMessage(message);
+    setActiveDog({ ...dog, effect });
+    setTimeout(() => {
+      setActiveDog(null);
+      setDogMessage("");
+    }, 2300);
   }
 
   async function refreshAll() {
@@ -258,7 +348,7 @@ export default function ESC2026Tippspiel() {
     setCurrentName(clean);
     setNameInput("");
     playJingle("save");
-    showDog();
+    showDog("Herzlich willkommen!");
     refreshAll();
   }
 
@@ -267,7 +357,7 @@ export default function ESC2026Tippspiel() {
     setPredictions({ ...predictions, [currentName]: next });
     await supabase.from("esc2026_predictions").upsert({ player_name: currentName, ...next, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
     playJingle("save");
-    showDog();
+    showDog("Tipp gespeichert!");
     refreshAll();
   }
 
@@ -275,6 +365,7 @@ export default function ESC2026Tippspiel() {
     setResults(next);
     await supabase.from("esc2026_results").update({ ...next, updated_at: new Date().toISOString() }).eq("id", 1);
     playJingle("save");
+    showDog("Ergebnis aktualisiert!");
     refreshAll();
   }
 
@@ -296,7 +387,7 @@ export default function ESC2026Tippspiel() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ff2fb3,_transparent_30%),radial-gradient(circle_at_top_right,_#00d4ff,_transparent_26%),linear-gradient(135deg,_#1c0d5a,_#6616b8_45%,_#f0673b)] p-4 text-white md:p-8">
-      <DogCelebration dog={activeDog} />
+      <DogCelebration dog={activeDog} message={dogMessage} />
       <div className="mx-auto max-w-[1500px]">
         <div className="grid gap-6 xl:grid-cols-[1fr_390px]">
           <div>
@@ -373,7 +464,7 @@ export default function ESC2026Tippspiel() {
               <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
                 <Card className="p-6">
                   <div className="mb-4 flex items-center gap-3"><Trophy className="h-8 w-8 text-yellow-200" /><h2 className="text-3xl font-black">Gewinner</h2></div>
-                  {leaderboard[0] ? <motion.div onClick={() => { playJingle("winner"); showDog(); }} whileTap={{ scale: .98 }} className="cursor-pointer rounded-3xl bg-yellow-300/25 p-5"><Crown className="mb-2 h-8 w-8" /><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="mt-1 text-2xl">{leaderboard[0].total} Punkte</div></motion.div> : <p>Noch keine Tipps vorhanden.</p>}
+                  {leaderboard[0] ? <motion.div onClick={() => { playJingle("winner"); showDog("Neuer Spitzenreiter!"); }} whileTap={{ scale: .98 }} className="cursor-pointer rounded-3xl bg-yellow-300/25 p-5"><Crown className="mb-2 h-8 w-8" /><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="mt-1 text-2xl">{leaderboard[0].total} Punkte</div></motion.div> : <p>Noch keine Tipps vorhanden.</p>}
                   <div className="mt-4 space-y-2">{leaderboard.map((p, idx) => <div key={p.name} className="flex items-center justify-between rounded-2xl bg-white/10 p-3"><span>{idx + 1}. {p.name}</span><b>{p.total}</b></div>)}</div>
                 </Card>
                 <Card className="p-6">
