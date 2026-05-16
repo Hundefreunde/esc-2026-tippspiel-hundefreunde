@@ -1,4 +1,4 @@
-vimport React, { useEffect, useMemo, useState } from "react";
+ import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Sparkles, Users, RotateCcw, Save, BarChart3, Music2, Wifi, Crown, PawPrint, ChevronsRight } from "lucide-react";
