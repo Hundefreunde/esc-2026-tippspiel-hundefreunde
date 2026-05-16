@@ -303,18 +303,50 @@ export default function ESC2026Tippspiel() {
   }
 
   async function refreshAll() {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL === "DEINE_SUPABASE_URL" || SUPABASE_ANON_KEY === "DEIN_SUPABASE_ANON_KEY") {
+      setStatus("Nicht verbunden: Vercel Supabase Variablen fehlen");
+      return;
+    }
+
     const [p, t, r] = await Promise.all([
       supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true }),
       supabase.from("esc2026_predictions").select("*"),
-      supabase.from("esc2026_results").select("*").eq("id", 1).single(),
+      supabase.from("esc2026_results").select("*").eq("id", 1).maybeSingle(),
     ]);
-    if (p.error || t.error || r.error) {
-      setStatus("Nicht verbunden: Supabase-Daten prüfen");
+
+    if (p.error || t.error) {
+      setStatus(`Nicht verbunden: ${p.error?.message || t.error?.message || "Supabase prüfen"}`);
       return;
     }
-    setPlayers((p.data || []).map((x) => x.name));
-    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, { top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", winner: x.winner || "", last: x.last || "" }])));
-    setResults({ ...emptyPrediction, ...(r.data || {}) });
+
+    // Spieler und Tipps werden auch dann synchron angezeigt, wenn die Ergebnis-Tabelle noch keinen Datensatz hat.
+    const remotePlayers = (p.data || []).map((x) => x.name);
+    const remotePredictions = Object.fromEntries((t.data || []).map((x) => [x.player_name, {
+      top1: x.top1 || "",
+      top2: x.top2 || "",
+      top3: x.top3 || "",
+      top4: x.top4 || "",
+      top5: x.top5 || "",
+      winner: x.winner || "",
+      last: x.last || "",
+    }]));
+
+    setPlayers(remotePlayers);
+    setPredictions(remotePredictions);
+
+    if (r.error) {
+      setResults({ ...emptyPrediction });
+      setStatus(`Teilweise verbunden: Ergebnisdaten prüfen (${r.error.message})`);
+      return;
+    }
+
+    if (!r.data) {
+      await supabase.from("esc2026_results").upsert({ id: 1, ...emptyPrediction }, { onConflict: "id" });
+      setResults({ ...emptyPrediction });
+    } else {
+      setResults({ ...emptyPrediction, ...r.data });
+    }
+
     setStatus("Verbunden mit Supabase ✓");
   }
 
