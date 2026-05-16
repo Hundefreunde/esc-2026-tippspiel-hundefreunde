@@ -1,4 +1,4 @@
- import React, { useEffect, useMemo, useState } from "react";
+vimport React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Sparkles, Users, RotateCcw, Save, BarChart3, Music2, Wifi, Crown, PawPrint, ChevronsRight } from "lucide-react";
@@ -39,12 +39,12 @@ const ENTRIES = [
 const emptyPrediction = { top1: "", top2: "", top3: "", top4: "", top5: "", winner: "", last: "" };
 
 const OFFICIAL_RESULTS = {
-  top1: "Moldova",
-  top2: "Bulgaria",
-  top3: "Australia",
-  top4: "Denmark",
-  top5: "France",
-  winner: "Moldova",
+  top1: "Bulgaria",
+  top2: "Israel",
+  top3: "Romania",
+  top4: "Australia",
+  top5: "Italy",
+  winner: "Bulgaria",
   last: "United Kingdom",
 };
 
