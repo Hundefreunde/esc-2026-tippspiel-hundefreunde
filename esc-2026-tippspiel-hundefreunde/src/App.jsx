@@ -1,6 +1,6 @@
  import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Archive,
   BarChart3,
@@ -21,7 +21,10 @@ import {
 const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_URL = RAW_SUPABASE_URL.replace(/\/rest\/v1\/?$/, "").trim();
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
-const IS_SUPABASE_CONFIGURED = SUPABASE_URL.startsWith("https://") && SUPABASE_URL.includes(".supabase.co") && SUPABASE_ANON_KEY.length > 20;
+const IS_SUPABASE_CONFIGURED =
+  SUPABASE_URL.startsWith("https://") &&
+  SUPABASE_URL.includes(".supabase.co") &&
+  SUPABASE_ANON_KEY.length > 20;
 const supabase = IS_SUPABASE_CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 const ENTRIES = [
@@ -73,12 +76,12 @@ const COUNTRY_FLAGS = {
 };
 
 const RESULT_STORIES = [
-  { place: 1, country: "Bulgaria", artist: "DARA", song: "Bangaranga", summary: "Bulgaria gewann mit einem energiegeladenen Pop-Auftritt, der moderne Club-Elemente mit folkloristischen Anklängen verbindet. Der Song wirkt wie eine große Final-Hymne: laut, direkt und sofort wiedererkennbar." },
-  { place: 2, country: "Israel", artist: "Noam Bettan", song: "Michelle", summary: "Israel landete mit einer emotionalen Performance auf Platz 2. „Michelle“ setzt auf eine klare Stimme, große Melodiebögen und eine persönliche, balladenhafte Inszenierung." },
-  { place: 3, country: "Romania", artist: "Alexandra Căpitănescu", song: "Choke Me", summary: "Rumänien erreichte Platz 3 mit einem dramatischen Pop-Rock-Auftritt. Der Song lebt von Spannung, dunkler Energie und einer kraftvollen Bühnenpräsenz." },
-  { place: 4, country: "Australia", artist: "Delta Goodrem", song: "Eclipse", summary: "Australien überzeugte mit einer großen, professionellen Pop-Performance. „Eclipse“ kombiniert starke Vocals mit einem glänzenden, emotionalen Finale." },
-  { place: 5, country: "Italy", artist: "Sal Da Vinci", song: "Per Sempre Sì", summary: "Italien erreichte die Top 5 mit einer warmen, melodischen Nummer. Der Beitrag setzt auf Gefühl, klassische italienische Pop-Atmosphäre und eine elegante Präsentation." },
-  { place: "Letzter Platz", country: "United Kingdom", artist: "LOOK MUM NO COMPUTER", song: "Eins, Zwei, Drei", summary: "Das Vereinigte Königreich landete auf dem letzten Platz. Der Beitrag war auffällig und experimentell, konnte aber beim Voting nicht genügend Unterstützung sammeln." },
+  { place: 1, country: "Bulgaria", artist: "DARA", song: "Bangaranga", summary: "Bulgaria gewann mit einem energiegeladenen Pop-Auftritt, der moderne Club-Elemente mit folkloristischen Anklängen verbindet." },
+  { place: 2, country: "Israel", artist: "Noam Bettan", song: "Michelle", summary: "Israel landete mit einer emotionalen Performance auf Platz 2." },
+  { place: 3, country: "Romania", artist: "Alexandra Căpitănescu", song: "Choke Me", summary: "Rumänien erreichte Platz 3 mit einem dramatischen Pop-Rock-Auftritt." },
+  { place: 4, country: "Australia", artist: "Delta Goodrem", song: "Eclipse", summary: "Australien überzeugte mit einer großen, professionellen Pop-Performance." },
+  { place: 5, country: "Italy", artist: "Sal Da Vinci", song: "Per Sempre Sì", summary: "Italien erreichte die Top 5 mit einer warmen, melodischen Nummer." },
+  { place: "Letzter Platz", country: "United Kingdom", artist: "LOOK MUM NO COMPUTER", song: "Eins, Zwei, Drei", summary: "Das Vereinigte Königreich landete auf dem letzten Platz." },
 ];
 
 const DOG_VARIANTS = [
@@ -124,10 +127,29 @@ function getProfileDog(id) {
   return PROFILE_DOG_OPTIONS.find((dog) => dog.id === id) || PROFILE_DOG_OPTIONS[0];
 }
 
+function entryLabel(country) {
+  const entry = ENTRIES.find((item) => item.country === country);
+  return entry ? `${entry.country} — ${entry.artist} · “${entry.song}”` : "";
+}
+
+function Card({ children, className = "" }) {
+  return <div className={`rounded-[2rem] border border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur ${className}`}>{children}</div>;
+}
+
+function Button({ children, className = "", ...props }) {
+  return (
+    <button {...props} className={`inline-flex items-center justify-center rounded-full px-5 py-3 font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${className}`}>
+      {children}
+    </button>
+  );
+}
+
 function ProfileDogAvatar({ dogId, name = "", size = "md", className = "", onClick }) {
   const dog = getProfileDog(dogId);
   const sizeClass = size === "lg" ? "h-24 w-24" : size === "sm" ? "h-12 w-12" : "h-16 w-16";
-  const backgroundPosition = dog ? `${dog.cols === 1 ? 0 : (dog.col / (dog.cols - 1)) * 100}% ${dog.rows === 1 ? 0 : (dog.row / (dog.rows - 1)) * 100}%` : "center";
+  const backgroundPosition = dog
+    ? `${dog.cols === 1 ? 0 : (dog.col / (dog.cols - 1)) * 100}% ${dog.rows === 1 ? 0 : (dog.row / (dog.rows - 1)) * 100}%`
+    : "center";
   const backgroundSize = dog ? `${dog.cols * 100}% ${dog.rows * 100}%` : "cover";
   const content = dog ? (
     <span
@@ -164,11 +186,10 @@ function ProfileDogPicker({ open, selectedId, onSelect, onClose }) {
           <div className="mb-5 flex items-start justify-between gap-4">
             <div>
               <h2 className="text-4xl font-black">Profilbild wählen</h2>
-              <p className="mt-1 text-white/80">Alle Hundeposen auf einen Blick. Klick auf eine Pose, um sie als Profilbild zu speichern.</p>
+              <p className="mt-1 text-white/80">Klick auf eine Pose, um sie als Profilbild zu speichern.</p>
             </div>
             <button type="button" onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"><X className="h-6 w-6" /></button>
           </div>
-
           <div className="space-y-7">
             {PROFILE_DOG_SHEETS.map((sheet) => {
               const options = PROFILE_DOG_OPTIONS.filter((dog) => dog.breed === sheet.breed);
@@ -177,12 +198,7 @@ function ProfileDogPicker({ open, selectedId, onSelect, onClose }) {
                   <h3 className="mb-3 text-2xl font-black">{sheet.breed}</h3>
                   <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9">
                     {options.map((dog) => (
-                      <button
-                        key={dog.id}
-                        type="button"
-                        onClick={() => onSelect(dog.id)}
-                        className={`rounded-[1.4rem] border p-3 transition hover:-translate-y-1 hover:bg-white/20 ${selectedId === dog.id ? "border-yellow-300 bg-yellow-300/25 ring-4 ring-yellow-300/40" : "border-white/15 bg-white/10"}`}
-                      >
+                      <button key={dog.id} type="button" onClick={() => onSelect(dog.id)} className={`rounded-[1.4rem] border p-3 transition hover:-translate-y-1 hover:bg-white/20 ${selectedId === dog.id ? "border-yellow-300 bg-yellow-300/25 ring-4 ring-yellow-300/40" : "border-white/15 bg-white/10"}`}>
                         <ProfileDogAvatar dogId={dog.id} size="lg" className="mx-auto" />
                         <div className="mt-2 truncate text-center text-xs font-black text-white/85">{dog.label}</div>
                       </button>
@@ -198,24 +214,11 @@ function ProfileDogPicker({ open, selectedId, onSelect, onClose }) {
   );
 }
 
-function entryLabel(country) {
-  const e = ENTRIES.find((x) => x.country === country);
-  return e ? `${e.country} — ${e.artist} · “${e.song}”` : "";
-}
-
-function Card({ children, className = "" }) {
-  return <div className={`rounded-[2rem] border border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur ${className}`}>{children}</div>;
-}
-
-function Button({ children, className = "", ...props }) {
-  return <button {...props} className={`inline-flex items-center justify-center rounded-full px-5 py-3 font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${className}`}>{children}</button>;
-}
-
 function SelectEntry({ value, onChange, label, used = [] }) {
   return (
     <label className="block">
       <span className="mb-2 block text-sm font-black text-white/95">{label}</span>
-      <select value={value || ""} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-white/30 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-4 focus:ring-fuchsia-300">
+      <select value={value || ""} onChange={(event) => onChange(event.target.value)} className="w-full rounded-xl border border-white/30 bg-white/95 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:ring-4 focus:ring-fuchsia-300">
         <option value="">Bitte auswählen</option>
         {ENTRIES.map((entry) => (
           <option key={entry.country} value={entry.country} disabled={used.includes(entry.country) && value !== entry.country}>
@@ -239,12 +242,15 @@ function CelebrationEffect({ type }) {
       </div>
     );
   }
+
   if (type === "lightbeams") {
     return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 8 }).map((_, i) => <motion.div key={i} className="absolute left-1/2 top-1/2 h-[150vh] w-16 origin-bottom rounded-full bg-gradient-to-t from-white/30 via-fuchsia-300/20 to-transparent blur-xl" style={{ rotate: `${i * 45}deg` }} initial={{ opacity: 0, scaleY: 0.25 }} animate={{ opacity: [0, 0.8, 0], scaleY: [0.25, 1, 0.4] }} transition={{ duration: 1.8, delay: i * 0.04 }} />)}</div>;
   }
+
   if (type === "sparkles") {
     return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 70 }).map((_, i) => <motion.span key={i} className="absolute text-2xl" style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }} initial={{ opacity: 0, scale: 0, rotate: 0 }} animate={{ opacity: [0, 1, 0], scale: [0, 1.3, 0], rotate: 180 }} transition={{ duration: 1.5, delay: Math.random() * 0.7 }}>✨</motion.span>)}</div>;
   }
+
   return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 95 }).map((_, i) => <motion.span key={i} initial={{ y: -80, x: `${Math.random() * 100}vw`, opacity: 0, rotate: 0, scale: 0.6 }} animate={{ y: "105vh", opacity: [0, 1, 1, 0], rotate: 720, scale: [0.6, 1, 0.8] }} transition={{ duration: 1.7 + Math.random() * 1, delay: Math.random() * 0.35, ease: "easeOut" }} className="absolute h-4 w-4 rounded-sm" style={{ background: ["#ff4fd8", "#ffe45e", "#39d7ff", "#a3ff53", "#ff8a3d"][i % 5] }} />)}</div>;
 }
 
@@ -278,7 +284,7 @@ function scorePrediction(prediction, results) {
   const rows = [];
   let total = 0;
 
-  ["top1", "top2", "top3", "top4", "top5"].forEach((key, idx) => {
+  ["top1", "top2", "top3", "top4", "top5"].forEach((key, index) => {
     const pick = prediction[key];
     let points = 0;
     let reason = "–";
@@ -296,7 +302,7 @@ function scorePrediction(prediction, results) {
     }
 
     total += points;
-    rows.push({ label: `Platz ${idx + 1}`, pick, points, reason, correct: points === 10, partial: points === 5 });
+    rows.push({ label: `Platz ${index + 1}`, pick, points, reason, correct: points === 10, partial: points === 5 });
   });
 
   if (prediction.top1) {
@@ -311,7 +317,7 @@ function scorePrediction(prediction, results) {
     rows.push({ label: "Letzter Platz", pick: prediction.last, points, reason: points ? "richtiger letzter Platz" : "nicht letzter Platz", correct: points > 0, partial: false });
   }
 
-  return { total, rows, exact: rows.filter((r) => r.correct).length, partial: rows.filter((r) => r.partial).length };
+  return { total, rows, exact: rows.filter((row) => row.correct).length, partial: rows.filter((row) => row.partial).length };
 }
 
 function PointsOverview() {
@@ -321,6 +327,7 @@ function PointsOverview() {
     { points: 10, title: "Top 5 exakt", desc: "Ein Act ist in den Top 5 und genau auf dem richtigen Platz." },
     { points: 5, title: "Top 5 Treffer", desc: "Ein Act ist in den Top 5, aber auf einem anderen Platz als getippt." },
   ];
+
   return (
     <Card className="p-6">
       <div className="mb-6 flex items-center gap-3"><Target className="h-8 w-8 text-yellow-200" /><div><h2 className="text-4xl font-black">Punkteübersicht</h2><p className="text-white/80">So werden die Tipps im Hundefreunde Wettstudio gewertet.</p></div></div>
@@ -360,7 +367,10 @@ export default function ESC2026Tippspiel() {
     const effect = CELEBRATION_EFFECTS[Math.floor(Math.random() * CELEBRATION_EFFECTS.length)];
     setDogMessage(message);
     setActiveDog({ ...dog, effect });
-    setTimeout(() => { setActiveDog(null); setDogMessage(""); }, 2300);
+    setTimeout(() => {
+      setActiveDog(null);
+      setDogMessage("");
+    }, 2300);
   }
 
   function openView(nextView) {
@@ -417,10 +427,9 @@ export default function ESC2026Tippspiel() {
       return;
     }
 
-    const playersRequest = await supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true });
-
+    const playersRequest = supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true });
     const [p, t, c, a] = await Promise.all([
-      Promise.resolve(playersRequest),
+      playersRequest,
       supabase.from("esc2026_predictions").select("*"),
       supabase.from("esc2026_chat").select("id, player_name, message, created_at").order("created_at", { ascending: true }).limit(120),
       supabase.from("esc2026_profiles").select("player_name, avatar_id"),
@@ -431,17 +440,20 @@ export default function ESC2026Tippspiel() {
       return;
     }
 
-    setPlayers((p.data || []).map((x) => x.name));
-    const remoteProfilePictures = Object.fromEntries((a.data || []).filter((x) => x.avatar_id).map((x) => [x.player_name, x.avatar_id]));
-    if (!a.error && Object.keys(remoteProfilePictures).length) {
-      setProfilePictures((prev) => {
-        const merged = { ...prev, ...remoteProfilePictures };
-        localStorage.setItem("esc2026_profilePictures", JSON.stringify(merged));
-        return merged;
-      });
-    }
-    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, { top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", last: x.last || "" }])));
+    setPlayers((p.data || []).map((item) => item.name));
+    setPredictions(Object.fromEntries((t.data || []).map((item) => [item.player_name, { top1: item.top1 || "", top2: item.top2 || "", top3: item.top3 || "", top4: item.top4 || "", top5: item.top5 || "", last: item.last || "" }])));
     setResults({ ...OFFICIAL_RESULTS });
+
+    if (!a.error) {
+      const remoteProfilePictures = Object.fromEntries((a.data || []).filter((item) => item.avatar_id).map((item) => [item.player_name, item.avatar_id]));
+      if (Object.keys(remoteProfilePictures).length) {
+        setProfilePictures((prev) => {
+          const merged = { ...prev, ...remoteProfilePictures };
+          localStorage.setItem("esc2026_profilePictures", JSON.stringify(merged));
+          return merged;
+        });
+      }
+    }
 
     if (!c.error) {
       setChatMessages(c.data || []);
@@ -456,12 +468,18 @@ export default function ESC2026Tippspiel() {
     refreshAll();
     const interval = setInterval(refreshAll, 3000);
     if (!supabase) return () => clearInterval(interval);
-    const channel = supabase.channel("esc2026-live")
+
+    const channel = supabase
+      .channel("esc2026-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_players" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_predictions" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_chat" }, refreshAll)
       .subscribe();
-    return () => { clearInterval(interval); supabase.removeChannel(channel); };
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -531,11 +549,13 @@ export default function ESC2026Tippspiel() {
 
   const scoringResults = useMemo(() => ({ ...OFFICIAL_RESULTS }), []);
   const leaderboard = useMemo(() => {
-    const sortedPlayers = players.map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, scoringResults) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+    const sortedPlayers = players
+      .map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, scoringResults) }))
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
     return sortedPlayers.map((player, index, list) => ({ ...player, rank: getRank(index, list) }));
   }, [players, predictions, scoringResults]);
 
-  const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
+  const maxScore = Math.max(1, ...leaderboard.map((player) => player.total));
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
   const currentProfileDogId = profilePictures[currentName] || DEFAULT_PROFILE_DOG_ID;
@@ -551,12 +571,8 @@ export default function ESC2026Tippspiel() {
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ff2fb3,_transparent_30%),radial-gradient(circle_at_top_right,_#00d4ff,_transparent_26%),linear-gradient(135deg,_#1c0d5a,_#6616b8_45%,_#f0673b)] p-4 text-white md:p-8">
       <DogCelebration dog={activeDog} message={dogMessage} />
-      <ProfileDogPicker
-        open={profilePickerOpen}
-        selectedId={currentProfileDogId}
-        onSelect={saveProfilePicture}
-        onClose={() => setProfilePickerOpen(false)}
-      />
+      <ProfileDogPicker open={profilePickerOpen} selectedId={currentProfileDogId} onSelect={saveProfilePicture} onClose={() => setProfilePickerOpen(false)} />
+
       <div className="mx-auto max-w-[1720px]">
         <div className="grid gap-6 xl:grid-cols-[1fr_390px_390px]">
           <div>
@@ -584,8 +600,8 @@ export default function ESC2026Tippspiel() {
                 <h2 className="mb-2 text-3xl font-black">Einloggen zum Tippen</h2>
                 <p className="mb-4 text-white/80">Name eingeben oder rechts einen vorhandenen Namen anklicken.</p>
                 <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                  <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} placeholder="Dein Name" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-4 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" />
-                  <Button onClick={login} className="rounded-2xl bg-fuchsia-500 px-8 py-6 text-white hover:bg-fuchsia-600"><Music2 className="mr-2 h-4 w-4" />Los geht’s</Button>
+                  <input value={nameInput} onChange={(event) => setNameInput(event.target.value)} onKeyDown={(event) => event.key === "Enter" && login()} placeholder="Dein Name" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-4 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" />
+                  <Button onClick={login} disabled={!supabase || !nameInput.trim()} className="rounded-2xl bg-fuchsia-500 px-8 py-6 text-white hover:bg-fuchsia-600"><Music2 className="mr-2 h-4 w-4" />Los geht’s</Button>
                 </div>
               </Card>
             )}
@@ -633,7 +649,6 @@ export default function ESC2026Tippspiel() {
                     <p className="text-white/80">Alle abgeschlossenen ESC-Jahre werden hier gesammelt. Das aktuelle Ergebnis ist als Archivposter unter ESC 2026 abgelegt.</p>
                   </div>
                 </div>
-
                 <div className="rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-fuchsia-500/35 via-purple-700/40 to-cyan-400/25 p-6 shadow-2xl">
                   <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                     <div>
@@ -646,32 +661,20 @@ export default function ESC2026Tippspiel() {
                       <div className="text-3xl font-black">🇧🇬 Bulgaria</div>
                     </div>
                   </div>
-
                   <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {RESULT_STORIES.map((item) => (
                       <div key={`archive-${item.country}`} className="rounded-[2rem] bg-white/15 p-5">
                         <div className="mb-3 flex items-center gap-4">
                           <div className="text-5xl">{COUNTRY_FLAGS[item.country] || "🏳️"}</div>
-                          <div>
-                            <div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div>
-                            <div className="text-2xl font-black">{item.country}</div>
-                          </div>
+                          <div><div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div><div className="text-2xl font-black">{item.country}</div></div>
                         </div>
                         <div className="font-bold text-white/90">{item.artist}</div>
                         <div className="text-sm text-white/80">“{item.song}”</div>
                       </div>
                     ))}
                   </div>
-
                   <div className="mt-8 rounded-[2rem] bg-black/20 p-5">
-                    <div className="mb-4 flex items-center gap-3">
-                      <Trophy className="h-7 w-7 text-yellow-200" />
-                      <div>
-                        <h4 className="text-3xl font-black">Mitspieler-Ranking</h4>
-                        <p className="text-sm text-white/75">Archivierte Übersicht: Wer welchen Platz belegt hat und wie viele Punkte erreicht wurden.</p>
-                      </div>
-                    </div>
-
+                    <div className="mb-4 flex items-center gap-3"><Trophy className="h-7 w-7 text-yellow-200" /><div><h4 className="text-3xl font-black">Mitspieler-Ranking</h4><p className="text-sm text-white/75">Archivierte Übersicht: Wer welchen Platz belegt hat und wie viele Punkte erreicht wurden.</p></div></div>
                     {leaderboard.length === 0 ? (
                       <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Noch keine Mitspieler:innen im Archiv vorhanden.</div>
                     ) : (
@@ -682,17 +685,113 @@ export default function ESC2026Tippspiel() {
                               <div className="flex items-center gap-3">
                                 <ProfileDogAvatar dogId={profilePictures[player.name] || DEFAULT_PROFILE_DOG_ID} name={player.name} size="sm" />
                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-black text-fuchsia-700">{player.rank}</div>
-                                <div>
-                                  <div className="text-2xl font-black">{player.name}</div>
-                                  <div className="text-xs text-white/70">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div>
-                                </div>
+                                <div><div className="text-2xl font-black">{player.name}</div><div className="text-xs text-white/70">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div></div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-3xl font-black text-yellow-200">{player.total}</div>
-                                <div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div>
+                              <div className="text-right"><div className="text-3xl font-black text-yellow-200">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div>
+                            </div>
+                            <div className="h-3 overflow-hidden rounded-full bg-black/30"><div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(5, (player.total / maxScore) * 100)}%` }} /></div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Card>
+            )}
+
+            {view === "score" && (
+              <Card className="p-6">
+                <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div><h2 className="text-4xl font-black">Live-Auswertung</h2><p className="text-white/80">Automatisch berechnet nach dem offiziellen Ergebnis.</p></div>
+                  <Button onClick={() => setScoreCelebrationKey((value) => value + 1)} className="bg-yellow-300 text-slate-950 hover:bg-yellow-200"><Sparkles className="mr-2 h-4 w-4" />Noch mal feiern</Button>
+                </div>
+                {leaderboard.length === 0 ? (
+                  <div className="rounded-3xl bg-white/10 p-6 text-white/80">Noch keine Mitspieler:innen vorhanden.</div>
+                ) : (
+                  <div className="space-y-4">
+                    <AnimatePresence mode="popLayout">
+                      {leaderboard.map((player, index) => (
+                        <motion.div key={`${scoreCelebrationKey}-${player.name}`} layout initial={{ opacity: 0, x: -30, scale: 0.96 }} animate={{ opacity: 1, x: 0, scale: 1 }} transition={{ delay: index * 0.06 }} className="rounded-[2rem] bg-white/12 p-5">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="flex items-center gap-4"><ProfileDogAvatar dogId={profilePictures[player.name] || DEFAULT_PROFILE_DOG_ID} name={player.name} size="sm" /><div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{player.rank}</div><div><h3 className="text-3xl font-black">{player.name}</h3><p className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</p></div></div>
+                            <div className="text-left md:text-right"><div className="text-5xl font-black text-yellow-200">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div>
+                          </div>
+                          <div className="mt-4 h-4 overflow-hidden rounded-full bg-black/30"><motion.div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" initial={{ width: 0 }} animate={{ width: `${Math.max(5, (player.total / maxScore) * 100)}%` }} transition={{ duration: 0.7, delay: index * 0.08 }} /></div>
+                          <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                            {player.rows.map((row) => (
+                              <div key={`${player.name}-${row.label}`} className="rounded-2xl bg-black/18 p-3">
+                                <div className="flex items-center justify-between gap-3"><div className="font-black">{row.label}</div><div className={`rounded-full px-3 py-1 text-sm font-black ${row.points > 0 ? "bg-yellow-300 text-slate-950" : "bg-white/10 text-white/75"}`}>{row.points}</div></div>
+                                <div className="mt-1 text-sm text-white/85">{row.pick ? entryLabel(row.pick) : "kein Tipp"}</div>
+                                <div className="mt-1 text-xs text-white/60">{row.reason}</div>
                               </div>
-                            </div>
-                            <div className="h-3 overflow-hidden rounded-full bg-black/30">
-                              <div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(5, (player.total / maxScore) * 100)}%` }} />
-                            </div>
-              
+                            ))}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </Card>
+            )}
+          </div>
+
+          <aside className="space-y-5">
+            <Card className="p-5">
+              <div className="mb-4 flex items-center gap-3"><Users className="h-7 w-7 text-cyan-200" /><div><h2 className="text-2xl font-black">Mitspieler:innen</h2><p className="text-sm text-white/70">Ansehen, übernehmen oder entfernen.</p></div></div>
+              {players.length === 0 ? (
+                <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/75">Noch niemand eingeloggt.</div>
+              ) : (
+                <div className="space-y-3">
+                  {players.map((name) => (
+                    <div key={name} className={`rounded-2xl p-3 transition ${selectedPlayerView === name ? "bg-yellow-300/20 ring-2 ring-yellow-300/40" : "bg-white/10"}`}>
+                      <div className="flex items-center gap-3"><ProfileDogAvatar dogId={profilePictures[name] || DEFAULT_PROFILE_DOG_ID} name={name} size="sm" /><div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name}</div><div className="text-xs text-white/65">{predictions[name]?.top1 ? `Siegertipp: ${predictions[name].top1}` : "noch kein Siegertipp"}</div></div></div>
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        <Button onClick={() => selectPlayer(name)} className="bg-white/15 px-3 py-2 text-xs text-white hover:bg-white/25"><Eye className="mr-1 h-3 w-3" />Ansehen</Button>
+                        <Button onClick={() => editAsPlayer(name)} className="bg-fuchsia-500 px-3 py-2 text-xs text-white hover:bg-fuchsia-600"><ChevronsRight className="mr-1 h-3 w-3" />Tippen</Button>
+                        <Button onClick={() => removePlayer(name)} className="bg-black/20 px-3 py-2 text-xs text-white hover:bg-black/35"><X className="mr-1 h-3 w-3" />Löschen</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            <Card className="p-5">
+              <div className="mb-4 flex items-center gap-3"><Eye className="h-7 w-7 text-yellow-200" /><div><h2 className="text-2xl font-black">Tipp-Ansicht</h2><p className="text-sm text-white/70">{selectedPlayerView || "Wähle rechts eine Person aus."}</p></div></div>
+              {selectedPlayerView ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((n) => {
+                    const key = `top${n}`;
+                    return <div key={key} className="rounded-2xl bg-white/10 p-3"><div className="text-xs font-black uppercase tracking-widest text-cyan-200">{n}. Platz</div><div className="font-bold">{viewedPrediction[key] ? entryLabel(viewedPrediction[key]) : "–"}</div></div>;
+                  })}
+                  <div className="rounded-2xl bg-cyan-300/15 p-3"><div className="text-xs font-black uppercase tracking-widest text-cyan-200">Letzter Platz</div><div className="font-bold">{viewedPrediction.last ? entryLabel(viewedPrediction.last) : "–"}</div></div>
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/75">Noch keine Person ausgewählt.</div>
+              )}
+            </Card>
+          </aside>
+
+          <aside>
+            <Card className="flex max-h-[calc(100vh-4rem)] min-h-[680px] flex-col p-5">
+              <div className="mb-4 flex items-center gap-3"><MessageCircle className="h-7 w-7 text-lime-200" /><div><h2 className="text-2xl font-black">Live-Chat</h2><p className="text-sm text-white/70">Plaudern während des Tippens.</p></div></div>
+              <div className="min-h-0 flex-1 space-y-3 overflow-auto rounded-[1.5rem] bg-black/18 p-3">
+                {chatMessages.length === 0 ? (
+                  <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/75">Noch keine Nachrichten.</div>
+                ) : (
+                  chatMessages.map((message) => (
+                    <div key={message.id} className="rounded-2xl bg-white/12 p-3"><div className="mb-1 flex items-center justify-between gap-3"><div className="font-black text-yellow-200">{message.player_name}</div><div className="text-[10px] text-white/50">{message.created_at ? new Date(message.created_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : ""}</div></div><p className="whitespace-pre-wrap break-words text-sm text-white/90">{message.message}</p></div>
+                  ))
+                )}
+              </div>
+              <div className="mt-4 grid gap-2">
+                <textarea value={chatInput} onChange={(event) => setChatInput(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendChat(); } }} placeholder={currentName ? "Nachricht schreiben …" : "Zum Chatten erst einloggen"} disabled={!currentName || !supabase} className="min-h-[90px] rounded-2xl border border-white/25 bg-white/95 p-3 text-slate-900 outline-none focus:ring-4 focus:ring-lime-300 disabled:opacity-60" />
+                <Button onClick={sendChat} disabled={!chatInput.trim() || !currentName || !supabase} className="bg-lime-300 text-slate-950 hover:bg-lime-200"><Send className="mr-2 h-4 w-4" />Senden</Button>
+              </div>
+            </Card>
+          </aside>
+        </div>
+      </div>
+    </main>
+  );
+}
