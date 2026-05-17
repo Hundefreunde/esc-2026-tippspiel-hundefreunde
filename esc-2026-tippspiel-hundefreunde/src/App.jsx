@@ -38,7 +38,10 @@ const dogOptions = sheets
 const defaultDog = dogOptions[0]?.id || "";
 
 const cn = (...xs) => xs.filter(Boolean).join(" ");
-const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const pick = (arr, excludeId = null) => {
+  const filtered = excludeId ? arr.filter((x) => x.id !== excludeId) : arr;
+  return filtered[Math.floor(Math.random() * filtered.length)];
+};
 const entryLabel = (country) => { const e = ENTRIES.find((x) => x.country === country); return e ? `${e.country} — ${e.artist} · “${e.song}”` : ""; };
 const cleanPrediction = (p = {}) => Object.fromEntries([...TOP_KEYS, "last"].map((k) => [k, p[k] || ""]));
 
@@ -123,10 +126,19 @@ function PointsOverview() {
 }
 
 export default function ESC2026Tippspiel() {
-  const [players, setPlayers] = useState([]), [predictions, setPredictions] = useState({}), [currentName, setCurrentName] = useState(() => localStorage.getItem("esc2026_currentName") || ""), [selectedPlayer, setSelectedPlayer] = useState(""), [nameInput, setNameInput] = useState(""), [view, setView] = useState("vote"), [status, setStatus] = useState("Live-Verbindung wird aufgebaut …"), [draft, setDraft] = useState(emptyPrediction), [activeCelebration, setActiveCelebration] = useState(null), [celebrationMessage, setCelebrationMessage] = useState(""), [chatMessages, setChatMessages] = useState([]), [chatInput, setChatInput] = useState(""), [scoreKey, setScoreKey] = useState(0), [pickerOpen, setPickerOpen] = useState(false);
+  const [players, setPlayers] = useState([]), [predictions, setPredictions] = useState({}), [currentName, setCurrentName] = useState(() => localStorage.getItem("esc2026_currentName") || ""), [selectedPlayer, setSelectedPlayer] = useState(""), [nameInput, setNameInput] = useState(""), [view, setView] = useState("vote"), [status, setStatus] = useState("Live-Verbindung wird aufgebaut …"), [draft, setDraft] = useState(emptyPrediction), [activeCelebration, setActiveCelebration] = useState(null), [lastCelebrationId, setLastCelebrationId] = useState(null), [celebrationMessage, setCelebrationMessage] = useState(""), [chatMessages, setChatMessages] = useState([]), [chatInput, setChatInput] = useState(""), [scoreKey, setScoreKey] = useState(0), [pickerOpen, setPickerOpen] = useState(false);
   const [avatars, setAvatars] = useState(() => { try { return JSON.parse(localStorage.getItem("esc2026_profilePictures") || "{}"); } catch { return {}; } });
   const avatar = (name) => avatars[name] || defaultDog;
-  const showCelebration = (message = "Gespeichert!") => { setCelebrationMessage(message); setActiveCelebration(pick(celebrationVideos)); setTimeout(() => { setActiveCelebration(null); setCelebrationMessage(""); }, 3200); };
+  const showCelebration = (message = "Gespeichert!") => {
+    const next = pick(celebrationVideos, lastCelebrationId);
+    setLastCelebrationId(next.id);
+    setCelebrationMessage(message);
+    setActiveCelebration(next);
+    setTimeout(() => {
+      setActiveCelebration(null);
+      setCelebrationMessage("");
+    }, 3200);
+  };
   const openView = (v) => { setView(v); if (v === "score") setScoreKey((x) => x + 1); };
   const db = (table) => supabase.from(table);
 
