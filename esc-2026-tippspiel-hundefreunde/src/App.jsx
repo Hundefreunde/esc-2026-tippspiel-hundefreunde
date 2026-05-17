@@ -1,12 +1,39 @@
  import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Sparkles, Users, RotateCcw, Save, BarChart3, Music2, Wifi, Crown, PawPrint, ChevronsRight } from "lucide-react";
+import { Trophy, Sparkles, Users, RotateCcw, BarChart3, Music2, Wifi, Crown, PawPrint, ChevronsRight, MessageCircle, Send, Eye } from "lucide-react";
 
 const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "DEINE_SUPABASE_URL";
 const SUPABASE_URL = RAW_SUPABASE_URL.replace(/\/rest\/v1\/?$/, "");
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "DEIN_SUPABASE_ANON_KEY";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/*
+SUPABASE-ERWEITERUNG FÜR DEN CHAT
+Bitte einmal in Supabase > SQL Editor > New query > Run ausführen:
+
+create table if not exists esc2026_chat (
+  id uuid primary key default gen_random_uuid(),
+  player_name text not null,
+  message text not null,
+  created_at timestamptz default now()
+);
+
+alter table esc2026_chat enable row level security;
+
+drop policy if exists "read chat" on esc2026_chat;
+drop policy if exists "insert chat" on esc2026_chat;
+
+create policy "read chat"
+on esc2026_chat
+for select
+using (true);
+
+create policy "insert chat"
+on esc2026_chat
+for insert
+with check (true);
+*/
 
 const ENTRIES = [
   { country: "Denmark", artist: "Søren Torpegaard Lund", song: "Før Vi Går Hjem" },
@@ -48,6 +75,57 @@ const OFFICIAL_RESULTS = {
   last: "United Kingdom",
 };
 
+const RESULT_STORIES = [
+  {
+    place: 1,
+    country: "Bulgaria",
+    artist: "DARA",
+    song: "Bangaranga",
+    image: "/results/Bulgaria.png",
+    summary: "Bulgaria gewann mit einem energiegeladenen Pop-Auftritt, der moderne Club-Elemente mit folkloristischen Anklängen verbindet. Der Song wirkt wie eine große Final-Hymne: laut, direkt und sofort wiedererkennbar.",
+  },
+  {
+    place: 2,
+    country: "Israel",
+    artist: "Noam Bettan",
+    song: "Michelle",
+    image: "/results/Israel.png",
+    summary: "Israel landete mit einer emotionalen Performance auf Platz 2. „Michelle“ setzt auf eine klare Stimme, große Melodiebögen und eine persönliche, balladenhafte Inszenierung.",
+  },
+  {
+    place: 3,
+    country: "Romania",
+    artist: "Alexandra Căpitănescu",
+    song: "Choke Me",
+    image: "/results/Romania.png",
+    summary: "Rumänien erreichte Platz 3 mit einem dramatischen Pop-Rock-Auftritt. Der Song lebt von Spannung, dunkler Energie und einer kraftvollen Bühnenpräsenz.",
+  },
+  {
+    place: 4,
+    country: "Australia",
+    artist: "Delta Goodrem",
+    song: "Eclipse",
+    image: "/results/Australia.png",
+    summary: "Australien überzeugte mit einer großen, professionellen Pop-Performance. „Eclipse“ kombiniert starke Vocals mit einem glänzenden, emotionalen Finale.",
+  },
+  {
+    place: 5,
+    country: "Italy",
+    artist: "Sal Da Vinci",
+    song: "Per Sempre Sì",
+    image: "/results/Italy.png",
+    summary: "Italien erreichte die Top 5 mit einer warmen, melodischen Nummer. Der Beitrag setzt auf Gefühl, klassische italienische Pop-Atmosphäre und eine elegante Präsentation.",
+  },
+  {
+    place: "Letzter Platz",
+    country: "United Kingdom",
+    artist: "LOOK MUM NO COMPUTER",
+    song: "Eins, Zwei, Drei",
+    image: "/results/United-Kingdom.png",
+    summary: "Das Vereinigte Königreich landete auf dem letzten Platz. Der Beitrag war auffällig und experimentell, konnte aber beim Voting nicht genügend Unterstützung sammeln.",
+  },
+];
+
 const DOG_VARIANTS = [
   { id: "dackel-1", image: "/dogs/Dackel-1.png" },
   { id: "dackel-2", image: "/dogs/Dackel-2.png" },
@@ -65,6 +143,10 @@ const CELEBRATION_EFFECTS = ["confetti", "fireworks", "sparkles", "lightbeams"];
 function entryLabel(country) {
   const e = ENTRIES.find((x) => x.country === country);
   return e ? `${e.country} — ${e.artist} · “${e.song}”` : "";
+}
+
+function entryData(country) {
+  return ENTRIES.find((x) => x.country === country) || { country, artist: "", song: "" };
 }
 
 function playJingle(type = "save") {
@@ -111,138 +193,40 @@ function SelectEntry({ value, onChange, label, used = [] }) {
   );
 }
 
-function CartoonDog({ dog }) {
-  return (
-    <img
-      src={dog.image}
-      alt=""
-      className="h-auto max-h-[58vh] w-auto max-w-[72vw] select-none object-contain drop-shadow-[0_30px_45px_rgba(0,0,0,.55)]"
-      draggable="false"
-    />
-  );
-}
-
 function CelebrationEffect({ type }) {
   if (type === "fireworks") {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 9 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute h-2 w-2 rounded-full bg-white shadow-[0_0_24px_rgba(255,255,255,.95)]"
-            style={{ left: `${12 + (i * 10) % 82}%`, top: `${12 + (i * 17) % 62}%` }}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [0, 1.1, 0], opacity: [0, 1, 0] }}
-            transition={{ duration: 1.25, delay: i * 0.08 }}
-          >
-            {Array.from({ length: 10 }).map((_, j) => (
-              <motion.span
-                key={j}
-                className="absolute left-1/2 top-1/2 h-1 w-12 origin-left rounded-full bg-gradient-to-r from-yellow-200 via-fuchsia-300 to-transparent"
-                style={{ rotate: `${j * 36}deg` }}
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: [0, 1, 0] }}
-                transition={{ duration: 1.2, delay: i * 0.08 }}
-              />
-            ))}
-          </motion.div>
-        ))}
-      </div>
-    );
+    return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 9 }).map((_, i) => <motion.div key={i} className="absolute h-2 w-2 rounded-full bg-white shadow-[0_0_24px_rgba(255,255,255,.95)]" style={{ left: `${12 + (i * 10) % 82}%`, top: `${12 + (i * 17) % 62}%` }} initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 1.1, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.25, delay: i * 0.08 }}>{Array.from({ length: 10 }).map((_, j) => <motion.span key={j} className="absolute left-1/2 top-1/2 h-1 w-12 origin-left rounded-full bg-gradient-to-r from-yellow-200 via-fuchsia-300 to-transparent" style={{ rotate: `${j * 36}deg` }} initial={{ scaleX: 0 }} animate={{ scaleX: [0, 1, 0] }} transition={{ duration: 1.2, delay: i * 0.08 }} />)}</motion.div>)}</div>;
   }
-
   if (type === "lightbeams") {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute left-1/2 top-1/2 h-[150vh] w-16 origin-bottom rounded-full bg-gradient-to-t from-white/30 via-fuchsia-300/20 to-transparent blur-xl"
-            style={{ rotate: `${i * 45}deg` }}
-            initial={{ opacity: 0, scaleY: 0.25 }}
-            animate={{ opacity: [0, 0.8, 0], scaleY: [0.25, 1, 0.4] }}
-            transition={{ duration: 1.8, delay: i * 0.04 }}
-          />
-        ))}
-      </div>
-    );
+    return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 8 }).map((_, i) => <motion.div key={i} className="absolute left-1/2 top-1/2 h-[150vh] w-16 origin-bottom rounded-full bg-gradient-to-t from-white/30 via-fuchsia-300/20 to-transparent blur-xl" style={{ rotate: `${i * 45}deg` }} initial={{ opacity: 0, scaleY: 0.25 }} animate={{ opacity: [0, 0.8, 0], scaleY: [0.25, 1, 0.4] }} transition={{ duration: 1.8, delay: i * 0.04 }} />)}</div>;
   }
-
   if (type === "sparkles") {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        {Array.from({ length: 70 }).map((_, i) => (
-          <motion.span
-            key={i}
-            className="absolute text-2xl"
-            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
-            initial={{ opacity: 0, scale: 0, rotate: 0 }}
-            animate={{ opacity: [0, 1, 0], scale: [0, 1.3, 0], rotate: 180 }}
-            transition={{ duration: 1.5, delay: Math.random() * 0.7 }}
-          >
-            ✨
-          </motion.span>
-        ))}
-      </div>
-    );
+    return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 70 }).map((_, i) => <motion.span key={i} className="absolute text-2xl" style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }} initial={{ opacity: 0, scale: 0, rotate: 0 }} animate={{ opacity: [0, 1, 0], scale: [0, 1.3, 0], rotate: 180 }} transition={{ duration: 1.5, delay: Math.random() * 0.7 }}>✨</motion.span>)}</div>;
   }
-
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      {Array.from({ length: 95 }).map((_, i) => (
-        <motion.span
-          key={i}
-          initial={{ y: -80, x: `${Math.random() * 100}vw`, opacity: 0, rotate: 0, scale: 0.6 }}
-          animate={{ y: "105vh", opacity: [0, 1, 1, 0], rotate: 720, scale: [0.6, 1, 0.8] }}
-          transition={{ duration: 1.7 + Math.random() * 1, delay: Math.random() * 0.35, ease: "easeOut" }}
-          className="absolute h-4 w-4 rounded-sm"
-          style={{ background: ["#ff4fd8", "#ffe45e", "#39d7ff", "#a3ff53", "#ff8a3d"][i % 5] }}
-        />
-      ))}
-    </div>
-  );
+  return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 95 }).map((_, i) => <motion.span key={i} initial={{ y: -80, x: `${Math.random() * 100}vw`, opacity: 0, rotate: 0, scale: 0.6 }} animate={{ y: "105vh", opacity: [0, 1, 1, 0], rotate: 720, scale: [0.6, 1, 0.8] }} transition={{ duration: 1.7 + Math.random() * 1, delay: Math.random() * 0.35, ease: "easeOut" }} className="absolute h-4 w-4 rounded-sm" style={{ background: ["#ff4fd8", "#ffe45e", "#39d7ff", "#a3ff53", "#ff8a3d"][i % 5] }} />)}</div>;
 }
 
 function DogCelebration({ dog, message }) {
   if (!dog) return null;
-
   return (
     <AnimatePresence>
-      <motion.div
-        className="pointer-events-none fixed inset-0 z-[999] flex items-center justify-center overflow-hidden bg-black/45 backdrop-blur-sm"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
+      <motion.div className="pointer-events-none fixed inset-0 z-[999] flex items-center justify-center overflow-hidden bg-black/45 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
         <CelebrationEffect type={dog.effect || "confetti"} />
-        <motion.div
-          initial={{ scale: 0.72, opacity: 0, y: 40 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.84, opacity: 0, y: -35 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className="relative flex flex-col items-center"
-        >
-          <motion.img
-            src={dog.image}
-            alt=""
-            draggable="false"
-            initial={{ rotate: -4, scale: 0.96 }}
-            animate={{ rotate: [0, -2, 2, 0], scale: [0.96, 1.02, 1] }}
-            transition={{ duration: 1.15 }}
-            className="max-h-[72vh] max-w-[78vw] select-none object-contain drop-shadow-[0_25px_50px_rgba(0,0,0,0.65)]"
-          />
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ delay: 0.08 }}
-            className="mt-5 rounded-full border border-white/20 bg-white/15 px-7 py-3 text-center text-2xl font-black tracking-tight text-white shadow-2xl backdrop-blur-xl"
-          >
-            {message}
-          </motion.div>
+        <motion.div initial={{ scale: 0.72, opacity: 0, y: 40 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.84, opacity: 0, y: -35 }} transition={{ duration: 0.45, ease: "easeOut" }} className="relative flex flex-col items-center">
+          <motion.img src={dog.image} alt="" draggable="false" initial={{ rotate: -4, scale: 0.96 }} animate={{ rotate: [0, -2, 2, 0], scale: [0.96, 1.02, 1] }} transition={{ duration: 1.15 }} className="max-h-[72vh] max-w-[78vw] select-none object-contain drop-shadow-[0_25px_50px_rgba(0,0,0,0.65)]" />
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} transition={{ delay: 0.08 }} className="mt-5 rounded-full border border-white/20 bg-white/15 px-7 py-3 text-center text-2xl font-black tracking-tight text-white shadow-2xl backdrop-blur-xl">{message}</motion.div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
+  );
+}
+
+function ResultImage({ src, alt }) {
+  return (
+    <div className="relative h-44 overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-500/35 via-purple-800/45 to-cyan-500/30">
+      <img src={src} alt={alt} className="h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      <div className="absolute inset-0 flex items-center justify-center text-5xl font-black text-white/30">ESC</div>
+    </div>
   );
 }
 
@@ -250,7 +234,6 @@ function scorePrediction(prediction, results) {
   const top5 = [results.top1, results.top2, results.top3, results.top4, results.top5].filter(Boolean);
   const rows = [];
   let total = 0;
-
   ["top1", "top2", "top3", "top4", "top5"].forEach((key, idx) => {
     const pick = prediction[key];
     let points = 0;
@@ -263,19 +246,16 @@ function scorePrediction(prediction, results) {
     total += points;
     rows.push({ label: `Platz ${idx + 1}`, pick, points, reason });
   });
-
   if (prediction.winner) {
     const points = prediction.winner === results.top1 ? 10 : 0;
     total += points;
     rows.push({ label: "Siegertipp", pick: prediction.winner, points, reason: points ? "richtiger Siegertipp" : "nicht Sieger" });
   }
-
   if (prediction.last) {
     const points = prediction.last === results.last ? 5 : 0;
     total += points;
     rows.push({ label: "Letzter Platz", pick: prediction.last, points, reason: points ? "richtiger letzter Platz" : "nicht letzter Platz" });
   }
-
   return { total, rows };
 }
 
@@ -289,24 +269,46 @@ export default function ESC2026Tippspiel() {
   const [view, setView] = useState("vote");
   const [status, setStatus] = useState("Live-Verbindung wird aufgebaut …");
   const [draftPrediction, setDraftPrediction] = useState({ ...emptyPrediction });
-  const [draftDirty, setDraftDirty] = useState(false);
   const [activeDog, setActiveDog] = useState(null);
   const [dogMessage, setDogMessage] = useState("");
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
 
   function showDog(message = "Gespeichert!") {
     const dog = DOG_VARIANTS[Math.floor(Math.random() * DOG_VARIANTS.length)];
     const effect = CELEBRATION_EFFECTS[Math.floor(Math.random() * CELEBRATION_EFFECTS.length)];
     setDogMessage(message);
     setActiveDog({ ...dog, effect });
-    setTimeout(() => {
-      setActiveDog(null);
-      setDogMessage("");
-    }, 2300);
+    setTimeout(() => { setActiveDog(null); setDogMessage(""); }, 2300);
+  }
+
+  async function savePrediction(next, message = "Tipps geändert!") {
+    if (!currentName) return;
+    const cleaned = {
+      top1: next.top1 || "",
+      top2: next.top2 || "",
+      top3: next.top3 || "",
+      top4: next.top4 || "",
+      top5: next.top5 || "",
+      winner: next.winner || "",
+      last: next.last || "",
+    };
+    setDraftPrediction(cleaned);
+    setPredictions((prev) => ({ ...prev, [currentName]: cleaned }));
+    const { error } = await supabase.from("esc2026_predictions").upsert({ player_name: currentName, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
+    if (error) {
+      setStatus(`Speichern fehlgeschlagen: ${error.message}`);
+      return;
+    }
+    playJingle("save");
+    showDog(message);
+    await refreshAll();
   }
 
   function setDraftField(key, value) {
-    setDraftDirty(true);
-    setDraftPrediction((prev) => ({ ...prev, [key]: value }));
+    const next = { ...draftPrediction, [key]: value };
+    setDraftPrediction(next);
+    savePrediction(next, "Tipps automatisch gespeichert!");
   }
 
   async function refreshAll() {
@@ -314,94 +316,50 @@ export default function ESC2026Tippspiel() {
       setStatus("Nicht verbunden: Vercel Supabase Variablen fehlen");
       return;
     }
-
-    const [p, t, r] = await Promise.all([
+    const [p, t, r, c] = await Promise.all([
       supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true }),
       supabase.from("esc2026_predictions").select("*"),
       supabase.from("esc2026_results").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("esc2026_chat").select("*").order("created_at", { ascending: true }).limit(120),
     ]);
-
     if (p.error || t.error) {
       setStatus(`Nicht verbunden: ${p.error?.message || t.error?.message || "Supabase prüfen"}`);
       return;
     }
-
-    // Spieler und Tipps werden auch dann synchron angezeigt, wenn die Ergebnis-Tabelle noch keinen Datensatz hat.
-    const remotePlayers = (p.data || []).map((x) => x.name);
-    const remotePredictions = Object.fromEntries((t.data || []).map((x) => [x.player_name, {
-      top1: x.top1 || "",
-      top2: x.top2 || "",
-      top3: x.top3 || "",
-      top4: x.top4 || "",
-      top5: x.top5 || "",
-      winner: x.winner || "",
-      last: x.last || "",
-    }]));
-
-    setPlayers(remotePlayers);
-    setPredictions(remotePredictions);
-
-    if (r.error) {
-      setResults({ ...emptyPrediction });
-      setStatus(`Teilweise verbunden: Ergebnisdaten prüfen (${r.error.message})`);
-      return;
-    }
-
-    if (!r.data) {
-      await supabase.from("esc2026_results").upsert({ id: 1, ...OFFICIAL_RESULTS }, { onConflict: "id" });
-      setResults({ ...OFFICIAL_RESULTS });
-    } else {
-      const savedResults = { ...OFFICIAL_RESULTS, ...r.data };
-      const isStillEmpty = !savedResults.top1 && !savedResults.top2 && !savedResults.top3 && !savedResults.top4 && !savedResults.top5 && !savedResults.last;
-      if (isStillEmpty) {
-        await supabase.from("esc2026_results").update({ ...OFFICIAL_RESULTS, updated_at: new Date().toISOString() }).eq("id", 1);
-        setResults({ ...OFFICIAL_RESULTS });
-      } else {
-        setResults(savedResults);
-      }
-    }
-
-    setStatus("Verbunden mit Supabase ✓");
+    setPlayers((p.data || []).map((x) => x.name));
+    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, { top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", winner: x.winner || "", last: x.last || "" }])));
+    if (!r.error && r.data) setResults({ ...OFFICIAL_RESULTS, ...r.data });
+    else setResults({ ...OFFICIAL_RESULTS });
+    if (!c.error) setChatMessages(c.data || []);
+    setStatus(c.error ? "Verbunden – Chat-Tabelle fehlt noch" : "Verbunden mit Supabase ✓");
   }
 
   useEffect(() => {
     refreshAll();
-
-    // Realtime ist praktisch, aber je nach Supabase-Konfiguration nicht immer sofort aktiv.
-    // Deshalb aktualisiert die App zusätzlich automatisch alle 3 Sekunden.
     const interval = setInterval(refreshAll, 3000);
-
     const channel = supabase.channel("esc2026-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_players" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_predictions" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_results" }, refreshAll)
+      .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_chat" }, refreshAll)
       .subscribe();
-
-    return () => {
-      clearInterval(interval);
-      supabase.removeChannel(channel);
-    };
+    return () => { clearInterval(interval); supabase.removeChannel(channel); };
   }, []);
 
   useEffect(() => {
-    if (!draftDirty) {
-      setDraftPrediction(predictions[currentName] || { ...emptyPrediction });
-    }
-  }, [currentName, predictions, draftDirty]);
+    setDraftPrediction(predictions[currentName] || { ...emptyPrediction });
+  }, [currentName, predictions]);
 
   async function selectPlayer(name) {
-    // Nur ansehen, nicht automatisch als diese Person bearbeiten.
     setSelectedPlayerView(name);
     setView("vote");
   }
 
   function editAsPlayer(name) {
-    // Bewusst als Person übernehmen/bearbeiten.
     localStorage.setItem("esc2026_currentName", name);
     setCurrentName(name);
     setSelectedPlayerView(name);
     setView("vote");
-    setDraftDirty(false);
     setDraftPrediction(predictions[name] || { ...emptyPrediction });
   }
 
@@ -413,92 +371,66 @@ export default function ESC2026Tippspiel() {
     await supabase.from("esc2026_predictions").upsert({ player_name: clean, ...emptyPrediction, ...(predictions[clean] || {}) }, { onConflict: "player_name" });
     localStorage.setItem("esc2026_currentName", clean);
     setCurrentName(clean);
+    setSelectedPlayerView(clean);
     setNameInput("");
     playJingle("save");
     showDog("Herzlich willkommen!");
     refreshAll();
   }
 
-  async function updatePrediction(next) {
-    if (!currentName) return;
-
-    const cleaned = {
-      top1: next.top1 || "",
-      top2: next.top2 || "",
-      top3: next.top3 || "",
-      top4: next.top4 || "",
-      top5: next.top5 || "",
-      winner: next.winner || "",
-      last: next.last || "",
-    };
-
-    setPredictions((prev) => ({ ...prev, [currentName]: cleaned }));
-    setDraftPrediction(cleaned);
-    setDraftDirty(false);
-
-    const { error } = await supabase
-      .from("esc2026_predictions")
-      .upsert({ player_name: currentName, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
-
-    if (error) {
-      setStatus(`Speichern fehlgeschlagen: ${error.message}`);
-      setDraftDirty(true);
-      return;
-    }
-
-    playJingle("save");
-    showDog("Tipp gespeichert!");
-    await refreshAll();
+  async function sendChat() {
+    const message = chatInput.trim();
+    if (!message || !currentName) return;
+    setChatInput("");
+    const { error } = await supabase.from("esc2026_chat").insert({ player_name: currentName, message });
+    if (error) setStatus(`Chat konnte nicht gespeichert werden: ${error.message}`);
+    else refreshAll();
   }
 
   async function updateResults(next) {
     const cleaned = { ...OFFICIAL_RESULTS, ...next };
     setResults(cleaned);
-    const { error } = await supabase.from("esc2026_results").upsert({ id: 1, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "id" });
-    if (error) {
-      setStatus(`Ergebnis konnte nicht gespeichert werden: ${error.message}`);
-      return;
-    }
-    playJingle("save");
-    showDog("Ergebnis aktualisiert!");
+    await supabase.from("esc2026_results").upsert({ id: 1, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "id" });
     refreshAll();
   }
 
   async function applyOfficialResults() {
     await updateResults(OFFICIAL_RESULTS);
     setView("score");
+    showDog("Ergebnis aktualisiert!");
   }
 
   async function resetAll() {
     if (!confirm("Wirklich alles löschen?")) return;
     await supabase.from("esc2026_predictions").delete().neq("player_name", "");
     await supabase.from("esc2026_players").delete().neq("name", "");
+    await supabase.from("esc2026_chat").delete().neq("message", "");
     await supabase.from("esc2026_results").update({ ...OFFICIAL_RESULTS }).eq("id", 1);
     localStorage.removeItem("esc2026_currentName");
     setCurrentName("");
     setPlayers([]);
     setPredictions({});
+    setChatMessages([]);
     refreshAll();
   }
 
   const leaderboard = useMemo(() => players.map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, results) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)), [players, predictions, results]);
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
-  const resultTop = [results.top1, results.top2, results.top3, results.top4, results.top5].filter(Boolean);
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ff2fb3,_transparent_30%),radial-gradient(circle_at_top_right,_#00d4ff,_transparent_26%),linear-gradient(135deg,_#1c0d5a,_#6616b8_45%,_#f0673b)] p-4 text-white md:p-8">
       <DogCelebration dog={activeDog} message={dogMessage} />
-      <div className="mx-auto max-w-[1500px]">
-        <div className="grid gap-6 xl:grid-cols-[1fr_390px]">
+      <div className="mx-auto max-w-[1720px]">
+        <div className="grid gap-6 xl:grid-cols-[1fr_390px_390px]">
           <div>
-            <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative mb-5 min-h-[300px] overflow-hidden rounded-[2rem] border border-white/20 bg-white/15 p-7 shadow-2xl backdrop-blur">
+            <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="relative mb-5 min-h-[250px] overflow-hidden rounded-[2rem] border border-white/20 bg-white/15 p-7 shadow-2xl backdrop-blur">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_70%,rgba(255,255,255,.16),transparent_32%),radial-gradient(circle_at_80%_20%,rgba(0,212,255,.16),transparent_24%)]" />
               <motion.div animate={{ scale: [1, 1.03, 1] }} transition={{ repeat: Infinity, duration: 2.8 }} className="relative mb-2 inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-sm font-bold"><Sparkles className="h-4 w-4" /> ESC 2026 · Live Tipp-Wette</motion.div>
               <div className="relative flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <h1 className="max-w-3xl text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">Hundefreunde Wettstudio ESC 2026</h1>
-                  <p className="mt-4 max-w-2xl text-lg text-white/90">Mehrere Geräte, mehrere Orte, ein gemeinsamer Tippstand. Alle Tipps werden live gespeichert und synchronisiert.</p>
+                  <p className="mt-4 max-w-2xl text-lg text-white/90">Gemeinsamer Tippstand, Live-Chat und automatische Speicherung auf allen Geräten.</p>
                 </div>
                 <div className="grid min-w-[250px] gap-3 text-sm md:text-right">
                   <div className={`rounded-2xl p-4 font-bold ${status.startsWith("Verbunden") ? "bg-lime-400/25" : "bg-white/20"}`}><Wifi className="mr-2 inline h-4 w-4" />{status}</div>
@@ -508,7 +440,7 @@ export default function ESC2026Tippspiel() {
             </motion.header>
 
             <div className="mb-5 flex flex-wrap gap-2">
-              {[{ id: "vote", label: "Tipps", icon: PawPrint }, { id: "results", label: "Ergebnis", icon: Trophy }, { id: "score", label: "Auswertung", icon: BarChart3 }].map(({ id, label, icon: Icon }) => (
+              {[{ id: "vote", label: currentName || "Tipps", icon: PawPrint }, { id: "results", label: "Ergebnis", icon: Trophy }, { id: "score", label: "Auswertung", icon: BarChart3 }].map(({ id, label, icon: Icon }) => (
                 <Button key={id} onClick={() => { setView(id); playJingle("save"); }} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>
               ))}
               <Button onClick={resetAll} className="bg-black/25 text-white hover:bg-black/40"><RotateCcw className="mr-2 h-4 w-4" />Reset</Button>
@@ -517,7 +449,7 @@ export default function ESC2026Tippspiel() {
             {!currentName && view === "vote" && (
               <Card className="mb-5 p-6">
                 <h2 className="mb-2 text-3xl font-black">Einloggen zum Tippen</h2>
-                <p className="mb-4 text-white/80">Name eingeben oder rechts einen vorhandenen Namen anklicken. Es gibt kein Teilnehmerlimit.</p>
+                <p className="mb-4 text-white/80">Name eingeben oder rechts einen vorhandenen Namen anklicken.</p>
                 <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                   <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} placeholder="Dein Name" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-4 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" />
                   <Button onClick={login} className="rounded-2xl bg-fuchsia-500 px-8 py-6 text-white hover:bg-fuchsia-600"><Music2 className="mr-2 h-4 w-4" />Los geht’s</Button>
@@ -530,15 +462,9 @@ export default function ESC2026Tippspiel() {
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <h2 className="text-3xl font-black">Tipps von {currentName} <span className="text-yellow-300">♛</span></h2>
-                    <p className="text-white/90">Wähle deine Top 5, separaten Siegertipp und letzten Platz. Änderungen sind jederzeit möglich — zum Abschluss einfach speichern.</p>
+                    <p className="text-white/90">Jede Auswahl wird automatisch gespeichert und kann jederzeit geändert werden.</p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="bg-white/20 text-white hover:bg-white/30"><Users className="mr-2 h-4 w-4" />Als anderen wählen</Button>
-                    <Button onClick={() => updatePrediction(draftPrediction)} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Save className="mr-2 h-4 w-4" />Eingabe speichern</Button>
-                  </div>
-                  <Button onClick={() => editAsPlayer(selectedPlayerView)} className="ml-auto bg-white/20 text-white hover:bg-white/30">
-                    Diese Tipps bearbeiten
-                  </Button>
+                  <Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="bg-white/20 text-white hover:bg-white/30"><Users className="mr-2 h-4 w-4" />Als anderen wählen</Button>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-5">
@@ -560,12 +486,25 @@ export default function ESC2026Tippspiel() {
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h2 className="text-3xl font-black">Offizielles Ergebnis</h2>
-                    <p className="text-white/80">Das Ergebnis ist fest hinterlegt. Klicke einmal auf „Offizielles Ergebnis speichern“, dann wird die Auswertung für alle Geräte aktualisiert.</p>
+                    <p className="text-white/80">Top 5 und letzter Platz mit Kurzinfos. Fotos können optional unter <b>public/results</b> ergänzt werden.</p>
                   </div>
-                  <Button onClick={applyOfficialResults} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Save className="mr-2 h-4 w-4" />Offizielles Ergebnis speichern</Button>
+                  <Button onClick={applyOfficialResults} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Trophy className="mr-2 h-4 w-4" />Ergebnis übernehmen</Button>
                 </div>
-                <div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">Platz {n}</div><div className="min-h-[96px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(results[key])}</div></div>; })}</div>
-                <div className="mt-4 rounded-3xl bg-cyan-300/20 p-4 md:w-1/2"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(results.last)}</div></div>
+                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                  {RESULT_STORIES.map((item) => (
+                    <div key={`${item.place}-${item.country}`} className="rounded-[2rem] bg-white/10 p-4">
+                      <ResultImage src={item.image} alt={`${item.country} ${item.artist}`} />
+                      <div className="mt-4 flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div>
+                          <h3 className="text-2xl font-black">{item.country}</h3>
+                          <p className="font-bold text-white/90">{item.artist} · “{item.song}”</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-sm leading-relaxed text-white/85">{item.summary}</p>
+                    </div>
+                  ))}
+                </div>
               </Card>
             )}
 
@@ -585,62 +524,31 @@ export default function ESC2026Tippspiel() {
 
             {selectedPlayerView && (
               <Card className="mt-5 p-6">
-                <div className="mb-5 flex items-center gap-3">
-                  <Users className="h-7 w-7 text-cyan-200" />
-                  <div>
-                    <h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2>
-                    <p className="text-white/80">Alle Mitspieler:innen können diese Tipps live ansehen. Bearbeiten geht nur, wenn du den Namen bewusst übernimmst.</p>
-                  </div>
+                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-3"><Eye className="h-7 w-7 text-cyan-200" /><div><h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2><p className="text-white/80">Alle können die Tipps live ansehen.</p></div></div>
+                  <Button onClick={() => editAsPlayer(selectedPlayerView)} className="bg-white/20 text-white hover:bg-white/30">Diese Tipps bearbeiten</Button>
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-5">
-                  {[1,2,3,4,5].map((n) => {
-                    const key = `top${n}`;
-                    return (
-                      <div key={key} className="rounded-3xl bg-white/10 p-4">
-                        <div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div>
-                        <div className="rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900 min-h-[90px]">
-                          {entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-3xl bg-yellow-300/20 p-4">
-                    <div className="mb-2 text-sm font-black text-white/80">Siegertipp</div>
-                    <div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">
-                      {entryLabel(viewedPrediction.winner) || "Noch kein Tipp"}
-                    </div>
-                  </div>
-
-                  <div className="rounded-3xl bg-cyan-300/20 p-4">
-                    <div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div>
-                    <div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">
-                      {entryLabel(viewedPrediction.last) || "Noch kein Tipp"}
-                    </div>
-                  </div>
-                </div>
+                <div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div><div className="min-h-[90px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}</div></div>; })}</div>
+                <div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-3xl bg-yellow-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Siegertipp</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.winner) || "Noch kein Tipp"}</div></div><div className="rounded-3xl bg-cyan-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.last) || "Noch kein Tipp"}</div></div></div>
               </Card>
             )}
-
-            <div className="mt-5 rounded-full bg-white/15 px-5 py-3 text-sm font-bold"><span><PawPrint className="mr-2 inline h-4 w-4" />Unbegrenzte Teilnahme · Alle sind willkommen!</span></div>
           </div>
 
           <aside className="xl:sticky xl:top-6 xl:self-start">
             <Card className="min-h-[680px] p-5">
               <div className="mb-4 flex items-center gap-2"><Users className="h-6 w-6" /><h2 className="text-2xl font-black">Mitspieler:innen ({players.length})</h2></div>
-              <p className="mb-4 text-sm text-white/80">Alle Namen erscheinen automatisch auf jedem Gerät. Zum Anschauen einfach Namen anklicken.</p>
-              <div className="max-h-[720px] space-y-2 overflow-auto pr-1">
-                {players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => (
-                  <button key={name} onClick={() => selectPlayer(name)} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div>
-                    <div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div>
-                    <ChevronsRight className="h-5 w-5 opacity-70" />
-                  </button>
-                ))}
+              <p className="mb-4 text-sm text-white/80">Namen anklicken, um Tipps anzusehen.</p>
+              <div className="max-h-[720px] space-y-2 overflow-auto pr-1">{players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => <button key={name} onClick={() => selectPlayer(name)} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div><div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div><ChevronsRight className="h-5 w-5 opacity-70" /></button>)}</div>
+            </Card>
+          </aside>
+
+          <aside className="xl:sticky xl:top-6 xl:self-start">
+            <Card className="flex min-h-[680px] flex-col p-5">
+              <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-6 w-6" /><h2 className="text-2xl font-black">Live-Chat</h2></div>
+              <div className="mb-4 flex-1 space-y-3 overflow-auto rounded-3xl bg-black/15 p-3">
+                {chatMessages.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Noch keine Nachrichten.</div> : chatMessages.map((m) => <div key={m.id} className={`rounded-2xl p-3 ${m.player_name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white"}`}><div className="mb-1 text-xs font-black opacity-80">{m.player_name}</div><div className="text-sm font-semibold">{m.message}</div></div>)}
               </div>
+              {currentName ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendChat()} placeholder="Nachricht schreiben…" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" /><Button onClick={sendChat} className="bg-fuchsia-500 text-white hover:bg-fuchsia-600"><Send className="h-5 w-5" /></Button></div> : <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Zum Chatten bitte erst mit Namen anmelden.</div>}
             </Card>
           </aside>
         </div>
