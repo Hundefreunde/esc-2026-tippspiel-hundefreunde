@@ -1,7 +1,23 @@
  import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Sparkles, Users, RotateCcw, BarChart3, Music2, Wifi, Crown, PawPrint, ChevronsRight, MessageCircle, Send, Eye } from "lucide-react";
+import {
+  BarChart3,
+  ChevronsRight,
+  Crown,
+  Eye,
+  Medal,
+  MessageCircle,
+  Music2,
+  PawPrint,
+  RotateCcw,
+  Send,
+  Sparkles,
+  Target,
+  Trophy,
+  Users,
+  Wifi,
+} from "lucide-react";
 
 const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "DEINE_SUPABASE_URL";
 const SUPABASE_URL = RAW_SUPABASE_URL.replace(/\/rest\/v1\/?$/, "");
@@ -63,7 +79,7 @@ const ENTRIES = [
   { country: "Austria", artist: "COSMÓ", song: "Tanzschein" },
 ];
 
-const emptyPrediction = { top1: "", top2: "", top3: "", top4: "", top5: "", winner: "", last: "" };
+const emptyPrediction = { top1: "", top2: "", top3: "", top4: "", top5: "", last: "" };
 
 const OFFICIAL_RESULTS = {
   top1: "Bulgaria",
@@ -71,9 +87,22 @@ const OFFICIAL_RESULTS = {
   top3: "Romania",
   top4: "Australia",
   top5: "Italy",
-  winner: "Bulgaria",
   last: "United Kingdom",
 };
+
+// Für die 5-Punkte-Regel. Falls du Platz 6 bis 10 später ergänzen willst, hier einfach austauschen/erweitern.
+const OFFICIAL_TOP10 = [
+  "Bulgaria",
+  "Israel",
+  "Romania",
+  "Australia",
+  "Italy",
+  "France",
+  "Denmark",
+  "Sweden",
+  "Norway",
+  "Austria",
+];
 
 const RESULT_STORIES = [
   {
@@ -145,30 +174,6 @@ function entryLabel(country) {
   return e ? `${e.country} — ${e.artist} · “${e.song}”` : "";
 }
 
-function entryData(country) {
-  return ENTRIES.find((x) => x.country === country) || { country, artist: "", song: "" };
-}
-
-function playJingle(type = "save") {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = type === "winner" ? [523, 659, 784, 1047] : [392, 494, 587, 784];
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "triangle";
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.09);
-      gain.gain.exponentialRampToValueAtTime(0.075, ctx.currentTime + i * 0.09 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.09 + 0.16);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.09);
-      osc.stop(ctx.currentTime + i * 0.09 + 0.18);
-    });
-  } catch {}
-}
-
 function Card({ children, className = "" }) {
   return <div className={`rounded-[2rem] border border-white/20 bg-white/15 text-white shadow-2xl backdrop-blur ${className}`}>{children}</div>;
 }
@@ -224,7 +229,7 @@ function DogCelebration({ dog, message }) {
 function ResultImage({ src, alt }) {
   return (
     <div className="relative h-44 overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-500/35 via-purple-800/45 to-cyan-500/30">
-      <img src={src} alt={alt} className="h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      <img src={src} alt={alt} className="relative z-10 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
       <div className="absolute inset-0 flex items-center justify-center text-5xl font-black text-white/30">ESC</div>
     </div>
   );
@@ -232,31 +237,67 @@ function ResultImage({ src, alt }) {
 
 function scorePrediction(prediction, results) {
   const top5 = [results.top1, results.top2, results.top3, results.top4, results.top5].filter(Boolean);
+  const exactMap = { top1: results.top1, top2: results.top2, top3: results.top3, top4: results.top4, top5: results.top5 };
   const rows = [];
   let total = 0;
+
   ["top1", "top2", "top3", "top4", "top5"].forEach((key, idx) => {
     const pick = prediction[key];
     let points = 0;
     let reason = "–";
+
     if (pick) {
-      if (results[key] === pick) { points = 3; reason = "korrekte Top-5-Position"; }
-      else if (top5.includes(pick)) { points = 2; reason = "Land in Top 5"; }
-      else reason = "nicht in Top 5";
+      if (exactMap[key] === pick) {
+        points = 10;
+        reason = "Top-5-Act auf richtigem Platz";
+      } else if (OFFICIAL_TOP10.includes(pick)) {
+        points = 5;
+        reason = "Act in den Top 10, aber anderer Platz";
+      } else {
+        reason = "nicht in den Top 10";
+      }
     }
+
     total += points;
-    rows.push({ label: `Platz ${idx + 1}`, pick, points, reason });
+    rows.push({ label: `Platz ${idx + 1}`, pick, points, reason, correct: points === 10, partial: points === 5 });
   });
-  if (prediction.winner) {
-    const points = prediction.winner === results.top1 ? 10 : 0;
+
+  if (prediction.top1) {
+    const points = prediction.top1 === results.top1 ? 30 : 0;
     total += points;
-    rows.push({ label: "Siegertipp", pick: prediction.winner, points, reason: points ? "richtiger Siegertipp" : "nicht Sieger" });
+    rows.push({ label: "Siegertipp", pick: prediction.top1, points, reason: points ? "richtiger Siegertipp" : "nicht Sieger", correct: points > 0, partial: false });
   }
+
   if (prediction.last) {
-    const points = prediction.last === results.last ? 5 : 0;
+    const points = prediction.last === results.last ? 20 : 0;
     total += points;
-    rows.push({ label: "Letzter Platz", pick: prediction.last, points, reason: points ? "richtiger letzter Platz" : "nicht letzter Platz" });
+    rows.push({ label: "Letzter Platz", pick: prediction.last, points, reason: points ? "richtiger letzter Platz" : "nicht letzter Platz", correct: points > 0, partial: false });
   }
-  return { total, rows };
+
+  return { total, rows, exact: rows.filter((r) => r.correct).length, partial: rows.filter((r) => r.partial).length };
+}
+
+function PointsOverview() {
+  const rules = [
+    { points: 30, title: "Richtiger Siegertipp", desc: "Dein Platz-1-Tipp ist automatisch dein Siegertipp." },
+    { points: 20, title: "Richtiger letzter Platz", desc: "Du hast den Act auf dem letzten Platz korrekt getippt." },
+    { points: 10, title: "Top 5 exakt", desc: "Ein Act ist in den Top 5 und genau auf dem richtigen Platz." },
+    { points: 5, title: "Top 10 Treffer", desc: "Ein Act ist in den Top 10, aber auf einem anderen Platz als getippt." },
+  ];
+  return (
+    <Card className="p-6">
+      <div className="mb-6 flex items-center gap-3"><Target className="h-8 w-8 text-yellow-200" /><div><h2 className="text-4xl font-black">Punkteübersicht</h2><p className="text-white/80">So werden die Tipps im Hundefreunde Wettstudio gewertet.</p></div></div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {rules.map((rule) => (
+          <div key={rule.title} className="rounded-[2rem] bg-white/10 p-5 text-center">
+            <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-yellow-300 text-3xl font-black text-slate-950">{rule.points}</div>
+            <h3 className="text-xl font-black">{rule.title}</h3>
+            <p className="mt-2 text-sm text-white/80">{rule.desc}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
 }
 
 export default function ESC2026Tippspiel() {
@@ -282,7 +323,7 @@ export default function ESC2026Tippspiel() {
     setTimeout(() => { setActiveDog(null); setDogMessage(""); }, 2300);
   }
 
-  async function savePrediction(next, message = "Tipps geändert!") {
+  async function savePrediction(next, message = "Tipps automatisch gespeichert!") {
     if (!currentName) return;
     const cleaned = {
       top1: next.top1 || "",
@@ -290,17 +331,17 @@ export default function ESC2026Tippspiel() {
       top3: next.top3 || "",
       top4: next.top4 || "",
       top5: next.top5 || "",
-      winner: next.winner || "",
       last: next.last || "",
     };
+
     setDraftPrediction(cleaned);
     setPredictions((prev) => ({ ...prev, [currentName]: cleaned }));
-    const { error } = await supabase.from("esc2026_predictions").upsert({ player_name: currentName, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
+
+    const { error } = await supabase.from("esc2026_predictions").upsert({ player_name: currentName, ...cleaned, winner: cleaned.top1, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
     if (error) {
       setStatus(`Speichern fehlgeschlagen: ${error.message}`);
       return;
     }
-    playJingle("save");
     showDog(message);
     await refreshAll();
   }
@@ -308,7 +349,7 @@ export default function ESC2026Tippspiel() {
   function setDraftField(key, value) {
     const next = { ...draftPrediction, [key]: value };
     setDraftPrediction(next);
-    savePrediction(next, "Tipps automatisch gespeichert!");
+    savePrediction(next);
   }
 
   async function refreshAll() {
@@ -316,20 +357,32 @@ export default function ESC2026Tippspiel() {
       setStatus("Nicht verbunden: Vercel Supabase Variablen fehlen");
       return;
     }
+
     const [p, t, r, c] = await Promise.all([
       supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true }),
       supabase.from("esc2026_predictions").select("*"),
       supabase.from("esc2026_results").select("*").eq("id", 1).maybeSingle(),
       supabase.from("esc2026_chat").select("*").order("created_at", { ascending: true }).limit(120),
     ]);
+
     if (p.error || t.error) {
       setStatus(`Nicht verbunden: ${p.error?.message || t.error?.message || "Supabase prüfen"}`);
       return;
     }
+
     setPlayers((p.data || []).map((x) => x.name));
-    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, { top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", winner: x.winner || "", last: x.last || "" }])));
+    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, {
+      top1: x.top1 || "",
+      top2: x.top2 || "",
+      top3: x.top3 || "",
+      top4: x.top4 || "",
+      top5: x.top5 || "",
+      last: x.last || "",
+    }])));
+
     if (!r.error && r.data) setResults({ ...OFFICIAL_RESULTS, ...r.data });
     else setResults({ ...OFFICIAL_RESULTS });
+
     if (!c.error) setChatMessages(c.data || []);
     setStatus(c.error ? "Verbunden – Chat-Tabelle fehlt noch" : "Verbunden mit Supabase ✓");
   }
@@ -368,12 +421,11 @@ export default function ESC2026Tippspiel() {
     if (!clean) return;
     if (!players.includes(clean)) setPlayers((prev) => [...prev, clean]);
     await supabase.from("esc2026_players").upsert({ name: clean }, { onConflict: "name" });
-    await supabase.from("esc2026_predictions").upsert({ player_name: clean, ...emptyPrediction, ...(predictions[clean] || {}) }, { onConflict: "player_name" });
+    await supabase.from("esc2026_predictions").upsert({ player_name: clean, ...emptyPrediction, winner: "" }, { onConflict: "player_name" });
     localStorage.setItem("esc2026_currentName", clean);
     setCurrentName(clean);
     setSelectedPlayerView(clean);
     setNameInput("");
-    playJingle("save");
     showDog("Herzlich willkommen!");
     refreshAll();
   }
@@ -390,7 +442,7 @@ export default function ESC2026Tippspiel() {
   async function updateResults(next) {
     const cleaned = { ...OFFICIAL_RESULTS, ...next };
     setResults(cleaned);
-    await supabase.from("esc2026_results").upsert({ id: 1, ...cleaned, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    await supabase.from("esc2026_results").upsert({ id: 1, ...cleaned, winner: cleaned.top1, updated_at: new Date().toISOString() }, { onConflict: "id" });
     refreshAll();
   }
 
@@ -405,7 +457,7 @@ export default function ESC2026Tippspiel() {
     await supabase.from("esc2026_predictions").delete().neq("player_name", "");
     await supabase.from("esc2026_players").delete().neq("name", "");
     await supabase.from("esc2026_chat").delete().neq("message", "");
-    await supabase.from("esc2026_results").update({ ...OFFICIAL_RESULTS }).eq("id", 1);
+    await supabase.from("esc2026_results").update({ ...OFFICIAL_RESULTS, winner: OFFICIAL_RESULTS.top1 }).eq("id", 1);
     localStorage.removeItem("esc2026_currentName");
     setCurrentName("");
     setPlayers([]);
@@ -415,8 +467,16 @@ export default function ESC2026Tippspiel() {
   }
 
   const leaderboard = useMemo(() => players.map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, results) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)), [players, predictions, results]);
+  const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
+
+  const navItems = [
+    { id: "vote", label: currentName || "Tipps", icon: PawPrint },
+    { id: "results", label: "Ergebnis", icon: Trophy },
+    { id: "score", label: "Auswertung", icon: BarChart3 },
+    { id: "points", label: "Punkteübersicht", icon: Target },
+  ];
 
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ff2fb3,_transparent_30%),radial-gradient(circle_at_top_right,_#00d4ff,_transparent_26%),linear-gradient(135deg,_#1c0d5a,_#6616b8_45%,_#f0673b)] p-4 text-white md:p-8">
@@ -440,8 +500,8 @@ export default function ESC2026Tippspiel() {
             </motion.header>
 
             <div className="mb-5 flex flex-wrap gap-2">
-              {[{ id: "vote", label: currentName || "Tipps", icon: PawPrint }, { id: "results", label: "Ergebnis", icon: Trophy }, { id: "score", label: "Auswertung", icon: BarChart3 }].map(({ id, label, icon: Icon }) => (
-                <Button key={id} onClick={() => { setView(id); playJingle("save"); }} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>
+              {navItems.map(({ id, label, icon: Icon }) => (
+                <Button key={id} onClick={() => setView(id)} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>
               ))}
               <Button onClick={resetAll} className="bg-black/25 text-white hover:bg-black/40"><RotateCcw className="mr-2 h-4 w-4" />Reset</Button>
             </div>
@@ -462,45 +522,31 @@ export default function ESC2026Tippspiel() {
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div>
                     <h2 className="text-3xl font-black">Tipps von {currentName} <span className="text-yellow-300">♛</span></h2>
-                    <p className="text-white/90">Jede Auswahl wird automatisch gespeichert und kann jederzeit geändert werden.</p>
+                    <p className="text-white/90">Jede Auswahl wird automatisch gespeichert. Platz 1 ist automatisch dein Siegertipp.</p>
                   </div>
                   <Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="bg-white/20 text-white hover:bg-white/30"><Users className="mr-2 h-4 w-4" />Als anderen wählen</Button>
                 </div>
-
                 <div className="grid gap-4 md:grid-cols-5">
                   {[1, 2, 3, 4, 5].map((n) => {
                     const key = `top${n}`;
                     return <motion.div whileHover={{ y: -4 }} key={key} className="rounded-3xl bg-white/10 p-4"><SelectEntry label={`${n}. Platz`} value={draftPrediction[key]} used={usedTop} onChange={(value) => setDraftField(key, value)} /></motion.div>;
                   })}
                 </div>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-3xl bg-yellow-300/20 p-4"><SelectEntry label="Wer gewinnt? · 10 Punkte" value={draftPrediction.winner} onChange={(value) => setDraftField("winner", value)} /></div>
-                  <div className="rounded-3xl bg-cyan-300/20 p-4"><SelectEntry label="Wer wird letzter? · 5 Punkte" value={draftPrediction.last} onChange={(value) => setDraftField("last", value)} /></div>
-                </div>
+                <div className="mt-4 rounded-3xl bg-cyan-300/20 p-4 md:w-1/2"><SelectEntry label="Wer wird letzter? · 20 Punkte" value={draftPrediction.last} onChange={(value) => setDraftField("last", value)} /></div>
               </Card>
             )}
 
             {view === "results" && (
               <Card className="p-6">
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h2 className="text-3xl font-black">Offizielles Ergebnis</h2>
-                    <p className="text-white/80">Top 5 und letzter Platz mit Kurzinfos. Fotos können optional unter <b>public/results</b> ergänzt werden.</p>
-                  </div>
+                  <div><h2 className="text-3xl font-black">Offizielles Ergebnis</h2><p className="text-white/80">Top 5 und letzter Platz mit Kurzinfos. Fotos können optional unter <b>public/results</b> ergänzt werden.</p></div>
                   <Button onClick={applyOfficialResults} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Trophy className="mr-2 h-4 w-4" />Ergebnis übernehmen</Button>
                 </div>
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {RESULT_STORIES.map((item) => (
                     <div key={`${item.place}-${item.country}`} className="rounded-[2rem] bg-white/10 p-4">
                       <ResultImage src={item.image} alt={`${item.country} ${item.artist}`} />
-                      <div className="mt-4 flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div>
-                          <h3 className="text-2xl font-black">{item.country}</h3>
-                          <p className="font-bold text-white/90">{item.artist} · “{item.song}”</p>
-                        </div>
-                      </div>
+                      <div className="mt-4"><div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div><h3 className="text-2xl font-black">{item.country}</h3><p className="font-bold text-white/90">{item.artist} · “{item.song}”</p></div>
                       <p className="mt-3 text-sm leading-relaxed text-white/85">{item.summary}</p>
                     </div>
                   ))}
@@ -508,16 +554,36 @@ export default function ESC2026Tippspiel() {
               </Card>
             )}
 
+            {view === "points" && <PointsOverview />}
+
             {view === "score" && (
-              <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+              <div className="space-y-6">
                 <Card className="p-6">
-                  <div className="mb-4 flex items-center gap-3"><Trophy className="h-8 w-8 text-yellow-200" /><h2 className="text-3xl font-black">Gewinner</h2></div>
-                  {leaderboard[0] ? <motion.div onClick={() => { playJingle("winner"); showDog("Neuer Spitzenreiter!"); }} whileTap={{ scale: .98 }} className="cursor-pointer rounded-3xl bg-yellow-300/25 p-5"><Crown className="mb-2 h-8 w-8" /><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="mt-1 text-2xl">{leaderboard[0].total} Punkte</div></motion.div> : <p>Noch keine Tipps vorhanden.</p>}
-                  <div className="mt-4 space-y-2">{leaderboard.map((p, idx) => <div key={p.name} className="flex items-center justify-between rounded-2xl bg-white/10 p-3"><span>{idx + 1}. {p.name}</span><b>{p.total}</b></div>)}</div>
-                </Card>
-                <Card className="p-6">
-                  <h2 className="mb-4 text-3xl font-black">Wer lag wo richtig?</h2>
-                  <div className="overflow-x-auto rounded-3xl bg-white/95 text-slate-900"><table className="w-full min-w-[900px] text-left text-sm"><thead className="bg-fuchsia-100 text-fuchsia-900"><tr><th className="p-3">Person</th><th className="p-3">Tipp</th><th className="p-3">Auswahl</th><th className="p-3">Treffer</th><th className="p-3 text-right">Punkte</th></tr></thead><tbody>{leaderboard.flatMap((player) => player.rows.map((row, i) => <tr key={`${player.name}-${row.label}`} className="border-t border-slate-200"><td className="p-3 font-bold">{i === 0 ? player.name : ""}</td><td className="p-3">{row.label}</td><td className="p-3">{entryLabel(row.pick) || "–"}</td><td className="p-3">{row.reason}</td><td className="p-3 text-right font-black">{row.points}</td></tr>))}</tbody></table></div>
+                  <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Plakative Punkteübersicht: richtig, teilweise richtig und daneben.</p></div>
+                    {leaderboard[0] && <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950"><div className="text-sm font-black uppercase tracking-widest">Gewinner:in</div><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="text-xl font-bold">{leaderboard[0].total} Punkte</div></div>}
+                  </div>
+
+                  <div className="grid gap-4">
+                    {leaderboard.map((player, idx) => (
+                      <div key={player.name} className="rounded-[2rem] bg-white/10 p-4">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{idx + 1}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-10-Treffer</div></div></div>
+                          <div className="text-right"><div className="text-3xl font-black">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div>
+                        </div>
+                        <div className="mb-3 h-4 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(4, (player.total / maxScore) * 100)}%` }} /></div>
+                        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                          {player.rows.map((row) => (
+                            <div key={row.label} className={`rounded-2xl p-3 text-sm ${row.correct ? "bg-lime-300 text-slate-950" : row.partial ? "bg-yellow-300 text-slate-950" : "bg-white/10 text-white"}`}>
+                              <div className="mb-1 flex items-center justify-between"><b>{row.label}</b><span className="font-black">{row.points}</span></div>
+                              <div className="truncate opacity-90">{entryLabel(row.pick) || "–"}</div>
+                              <div className="mt-1 text-xs font-bold opacity-80">{row.reason}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </Card>
               </div>
             )}
@@ -529,7 +595,7 @@ export default function ESC2026Tippspiel() {
                   <Button onClick={() => editAsPlayer(selectedPlayerView)} className="bg-white/20 text-white hover:bg-white/30">Diese Tipps bearbeiten</Button>
                 </div>
                 <div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div><div className="min-h-[90px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}</div></div>; })}</div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-3xl bg-yellow-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Siegertipp</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.winner) || "Noch kein Tipp"}</div></div><div className="rounded-3xl bg-cyan-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.last) || "Noch kein Tipp"}</div></div></div>
+                <div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-3xl bg-yellow-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Siegertipp</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.top1) || "Noch kein Tipp"}</div></div><div className="rounded-3xl bg-cyan-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.last) || "Noch kein Tipp"}</div></div></div>
               </Card>
             )}
           </div>
