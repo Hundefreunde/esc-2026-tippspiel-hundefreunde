@@ -2,6 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  Archive,
   BarChart3,
   ChevronsRight,
   Crown,
@@ -10,8 +11,10 @@ import {
   MessageCircle,
   Music2,
   PawPrint,
+  MoreVertical,
   RotateCcw,
   Send,
+  Trash2,
   Sparkles,
   Target,
   Trophy,
@@ -324,6 +327,7 @@ export default function ESC2026Tippspiel() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [scoreCelebrationKey, setScoreCelebrationKey] = useState(0);
+  const [playerMenuOpen, setPlayerMenuOpen] = useState("");
 
   function showDog(message = "Gespeichert!") {
     const dog = DOG_VARIANTS[Math.floor(Math.random() * DOG_VARIANTS.length)];
@@ -497,19 +501,27 @@ export default function ESC2026Tippspiel() {
     showDog("Ergebnis aktualisiert!");
   }
 
-  async function resetAll() {
-    if (!confirm("Wirklich alles löschen?")) return;
-    if (!supabase) return;
-    await supabase.from("esc2026_predictions").delete().neq("player_name", "");
-    await supabase.from("esc2026_players").delete().neq("name", "");
-    await supabase.from("esc2026_chat").delete().neq("message", "");
-    await supabase.from("esc2026_results").update({ ...OFFICIAL_RESULTS, winner: OFFICIAL_RESULTS.top1 }).eq("id", 1);
-    localStorage.removeItem("esc2026_currentName");
-    setCurrentName("");
-    setPlayers([]);
-    setPredictions({});
-    setChatMessages([]);
-    refreshAll();
+  async function removePlayer(name) {
+    if (!supabase || !name) return;
+
+    const confirmed = confirm(`${name} wirklich entfernen? Die Tipps dieser Person werden ebenfalls gelöscht.`);
+    if (!confirmed) return;
+
+    await supabase.from("esc2026_predictions").delete().eq("player_name", name);
+    await supabase.from("esc2026_players").delete().eq("name", name);
+
+    if (currentName === name) {
+      localStorage.removeItem("esc2026_currentName");
+      setCurrentName("");
+      setDraftPrediction({ ...emptyPrediction });
+    }
+
+    if (selectedPlayerView === name) {
+      setSelectedPlayerView("");
+    }
+
+    setPlayerMenuOpen("");
+    await refreshAll();
   }
 
   // Wichtig: Die Auswertung nutzt immer das fest hinterlegte offizielle Ergebnis.
@@ -534,6 +546,7 @@ export default function ESC2026Tippspiel() {
     { id: "results", label: "Ergebnis", icon: Trophy },
     { id: "score", label: "Auswertung", icon: BarChart3 },
     { id: "points", label: "Punkteübersicht", icon: Target },
+    { id: "archive", label: "Archiv", icon: Archive },
   ];
 
   return (
@@ -561,7 +574,6 @@ export default function ESC2026Tippspiel() {
               {navItems.map(({ id, label, icon: Icon }) => (
                 <Button key={id} onClick={() => openView(id)} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>
               ))}
-              <Button onClick={resetAll} className="bg-black/25 text-white hover:bg-black/40"><RotateCcw className="mr-2 h-4 w-4" />Reset</Button>
             </div>
 
             {!currentName && view === "vote" && (
@@ -613,6 +625,48 @@ export default function ESC2026Tippspiel() {
             )}
 
             {view === "points" && <PointsOverview />}
+
+            {view === "archive" && (
+              <Card className="p-6">
+                <div className="mb-6 flex items-center gap-3">
+                  <Archive className="h-8 w-8 text-yellow-200" />
+                  <div>
+                    <h2 className="text-4xl font-black">Archiv</h2>
+                    <p className="text-white/80">Alle abgeschlossenen ESC-Jahre werden hier gesammelt. Das aktuelle Ergebnis ist als Archivbild unter ESC 2026 abgelegt.</p>
+                  </div>
+                </div>
+
+                <div className="rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-fuchsia-500/35 via-purple-700/40 to-cyan-400/25 p-6 shadow-2xl">
+                  <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <div className="mb-2 inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-black">Archivbild</div>
+                      <h3 className="text-5xl font-black leading-none">ESC 2026</h3>
+                      <p className="mt-2 text-white/80">Offizielles Hundefreunde-Wettstudio Ergebnis</p>
+                    </div>
+                    <div className="rounded-3xl bg-yellow-300 px-6 py-4 text-right text-slate-950">
+                      <div className="text-xs font-black uppercase tracking-widest">Sieger</div>
+                      <div className="text-3xl font-black">🇧🇬 Bulgaria</div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {RESULT_STORIES.map((item) => (
+                      <div key={`archive-${item.country}`} className="rounded-[2rem] bg-white/15 p-5">
+                        <div className="mb-3 flex items-center gap-4">
+                          <div className="text-5xl">{COUNTRY_FLAGS[item.country] || "🏳️"}</div>
+                          <div>
+                            <div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div>
+                            <div className="text-2xl font-black">{item.country}</div>
+                          </div>
+                        </div>
+                        <div className="font-bold text-white/90">{item.artist}</div>
+                        <div className="text-sm text-white/80">“{item.song}”</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            )}
 
             {view === "score" && (
               <>
@@ -676,21 +730,25 @@ export default function ESC2026Tippspiel() {
             <Card className="min-h-[680px] p-5">
               <div className="mb-4 flex items-center gap-2"><Users className="h-6 w-6" /><h2 className="text-2xl font-black">Mitspieler:innen ({players.length})</h2></div>
               <p className="mb-4 text-sm text-white/80">Namen anklicken, um Tipps anzusehen.</p>
-              <div className="max-h-[720px] space-y-2 overflow-auto pr-1">{players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => <button key={name} onClick={() => selectPlayer(name)} className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div><div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div><ChevronsRight className="h-5 w-5 opacity-70" /></button>)}</div>
-            </Card>
-          </aside>
+              <div className="max-h-[720px] space-y-2 overflow-auto pr-1">
+                {players.length === 0 ? (
+                  <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div>
+                ) : players.map((name, idx) => (
+                  <div key={name} className={`relative flex w-full items-center gap-2 rounded-2xl p-2 transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
+                    <button onClick={() => selectPlayer(name)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div>
+                        <div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div>
+                      </div>
+                      <ChevronsRight className="h-5 w-5 opacity-70" />
+                    </button>
 
-          <aside className="xl:sticky xl:top-6 xl:self-start">
-            <Card className="flex min-h-[680px] flex-col p-5">
-              <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-6 w-6" /><h2 className="text-2xl font-black">Live-Chat</h2></div>
-              <div className="mb-4 flex-1 space-y-3 overflow-auto rounded-3xl bg-black/15 p-3">
-                {chatMessages.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Noch keine Nachrichten.</div> : chatMessages.map((m) => <div key={m.id} className={`rounded-2xl p-3 ${m.player_name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white"}`}><div className="mb-1 text-xs font-black opacity-80">{m.player_name}</div><div className="text-sm font-semibold">{m.message}</div></div>)}
-              </div>
-              {currentName ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendChat()} placeholder="Nachricht schreiben…" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" /><Button onClick={sendChat} className="bg-fuchsia-500 text-white hover:bg-fuchsia-600"><Send className="h-5 w-5" /></Button></div> : <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Zum Chatten bitte erst mit Namen anmelden.</div>}
-            </Card>
-          </aside>
-        </div>
-      </div>
-    </main>
-  );
-}
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPlayerMenuOpen(playerMenuOpen === name ? "" : name);
+                      }}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${name === currentName ? "bg-black/10 hover:bg-black/20" : "bg-white/10 hover:bg-white/20"}`}
+                      aria-label={`${name} Menü öffnen`}
+                    >
