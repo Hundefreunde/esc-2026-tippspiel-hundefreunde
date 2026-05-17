@@ -1,12 +1,10 @@
- import React, { useEffect, useMemo, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   ChevronsRight,
   Crown,
   Eye,
-  Medal,
+  Flag,
   MessageCircle,
   Music2,
   PawPrint,
@@ -98,13 +96,21 @@ const OFFICIAL_TOP5 = [
   OFFICIAL_RESULTS.top5,
 ];
 
+const COUNTRY_FLAGS = {
+  Bulgaria: "🇧🇬",
+  Israel: "🇮🇱",
+  Romania: "🇷🇴",
+  Australia: "🇦🇺",
+  Italy: "🇮🇹",
+  "United Kingdom": "🇬🇧",
+};
+
 const RESULT_STORIES = [
   {
     place: 1,
     country: "Bulgaria",
     artist: "DARA",
     song: "Bangaranga",
-    image: "/results/Bulgaria.png",
     summary: "Bulgaria gewann mit einem energiegeladenen Pop-Auftritt, der moderne Club-Elemente mit folkloristischen Anklängen verbindet. Der Song wirkt wie eine große Final-Hymne: laut, direkt und sofort wiedererkennbar.",
   },
   {
@@ -112,7 +118,6 @@ const RESULT_STORIES = [
     country: "Israel",
     artist: "Noam Bettan",
     song: "Michelle",
-    image: "/results/Israel.png",
     summary: "Israel landete mit einer emotionalen Performance auf Platz 2. „Michelle“ setzt auf eine klare Stimme, große Melodiebögen und eine persönliche, balladenhafte Inszenierung.",
   },
   {
@@ -120,7 +125,6 @@ const RESULT_STORIES = [
     country: "Romania",
     artist: "Alexandra Căpitănescu",
     song: "Choke Me",
-    image: "/results/Romania.png",
     summary: "Rumänien erreichte Platz 3 mit einem dramatischen Pop-Rock-Auftritt. Der Song lebt von Spannung, dunkler Energie und einer kraftvollen Bühnenpräsenz.",
   },
   {
@@ -128,7 +132,6 @@ const RESULT_STORIES = [
     country: "Australia",
     artist: "Delta Goodrem",
     song: "Eclipse",
-    image: "/results/Australia.png",
     summary: "Australien überzeugte mit einer großen, professionellen Pop-Performance. „Eclipse“ kombiniert starke Vocals mit einem glänzenden, emotionalen Finale.",
   },
   {
@@ -136,7 +139,6 @@ const RESULT_STORIES = [
     country: "Italy",
     artist: "Sal Da Vinci",
     song: "Per Sempre Sì",
-    image: "/results/Italy.png",
     summary: "Italien erreichte die Top 5 mit einer warmen, melodischen Nummer. Der Beitrag setzt auf Gefühl, klassische italienische Pop-Atmosphäre und eine elegante Präsentation.",
   },
   {
@@ -144,7 +146,6 @@ const RESULT_STORIES = [
     country: "United Kingdom",
     artist: "LOOK MUM NO COMPUTER",
     song: "Eins, Zwei, Drei",
-    image: "/results/United-Kingdom.png",
     summary: "Das Vereinigte Königreich landete auf dem letzten Platz. Der Beitrag war auffällig und experimentell, konnte aber beim Voting nicht genügend Unterstützung sammeln.",
   },
 ];
@@ -220,11 +221,19 @@ function DogCelebration({ dog, message }) {
   );
 }
 
-function ResultImage({ src, alt }) {
+function ResultFlag({ country }) {
   return (
-    <div className="relative h-44 overflow-hidden rounded-3xl bg-gradient-to-br from-fuchsia-500/35 via-purple-800/45 to-cyan-500/30">
-      <img src={src} alt={alt} className="relative z-10 h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-      <div className="absolute inset-0 flex items-center justify-center text-5xl font-black text-white/30">ESC</div>
+    <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-white/20 via-purple-800/35 to-cyan-500/25 shadow-inner">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,.28),transparent_30%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.14),transparent_28%)]" />
+      <motion.div
+        initial={{ scale: 0.86, rotate: -4 }}
+        animate={{ scale: [0.86, 1.02, 1], rotate: [-4, 2, 0] }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="relative text-[7rem] leading-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.35)]"
+        aria-label={`Flagge ${country}`}
+      >
+        {COUNTRY_FLAGS[country] || "🏳️"}
+      </motion.div>
     </div>
   );
 }
@@ -356,7 +365,7 @@ export default function ESC2026Tippspiel() {
       supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true }),
       supabase.from("esc2026_predictions").select("*"),
       supabase.from("esc2026_results").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("esc2026_chat").select("*").order("created_at", { ascending: true }).limit(120),
+      supabase.from("esc2026_chat").select("id, player_name, message, created_at").order("created_at", { ascending: true }).limit(120),
     ]);
 
     if (p.error || t.error) {
@@ -378,8 +387,13 @@ export default function ESC2026Tippspiel() {
     // Damit können alte Werte in Supabase die Auswertung nicht mehr verfälschen.
     setResults({ ...OFFICIAL_RESULTS });
 
-    if (!c.error) setChatMessages(c.data || []);
-    setStatus(c.error ? "Verbunden – Chat-Tabelle fehlt noch" : "Verbunden mit Supabase ✓");
+    if (!c.error) {
+      setChatMessages(c.data || []);
+      setStatus("Verbunden mit Supabase ✓");
+    } else {
+      setChatMessages([]);
+      setStatus(`Verbunden – Chat prüfen: ${c.error.message}`);
+    }
   }
 
   useEffect(() => {
@@ -430,8 +444,12 @@ export default function ESC2026Tippspiel() {
     if (!message || !currentName) return;
     setChatInput("");
     const { error } = await supabase.from("esc2026_chat").insert({ player_name: currentName, message });
-    if (error) setStatus(`Chat konnte nicht gespeichert werden: ${error.message}`);
-    else refreshAll();
+    if (error) {
+      setStatus(`Chat konnte nicht gespeichert werden: ${error.message}`);
+      setChatInput(message);
+    } else {
+      refreshAll();
+    }
   }
 
   async function updateResults(next) {
@@ -542,13 +560,13 @@ export default function ESC2026Tippspiel() {
             {view === "results" && (
               <Card className="p-6">
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div><h2 className="text-3xl font-black">Offizielles Ergebnis</h2><p className="text-white/80">Top 5 und letzter Platz mit Kurzinfos. Fotos können optional unter <b>public/results</b> ergänzt werden.</p></div>
+                  <div><h2 className="text-3xl font-black">Offizielles Ergebnis</h2><p className="text-white/80">Top 5 und letzter Platz mit Flaggen, Künstler:innen, Song und Kurzinfos.</p></div>
                   <Button onClick={applyOfficialResults} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Trophy className="mr-2 h-4 w-4" />Ergebnis übernehmen</Button>
                 </div>
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                   {RESULT_STORIES.map((item) => (
                     <div key={`${item.place}-${item.country}`} className="rounded-[2rem] bg-white/10 p-4">
-                      <ResultImage src={item.image} alt={`${item.country} ${item.artist}`} />
+                      <ResultFlag country={item.country} />
                       <div className="mt-4"><div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div><h3 className="text-2xl font-black">{item.country}</h3><p className="font-bold text-white/90">{item.artist} · “{item.song}”</p></div>
                       <p className="mt-3 text-sm leading-relaxed text-white/85">{item.summary}</p>
                     </div>
