@@ -745,10 +745,13 @@ export default function ESC2026Tippspiel() {
                     </button>
 
                     <button
-                      onClick={(event) => {
+                      onClick={async (event) => {
                         event.stopPropagation();
-                        setPlayerMenuOpen(playerMenuOpen === name ? "" : name);
+                        await removePlayer(name);
                       }}
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${name === currentName ? "bg-black/10 hover:bg-black/20" : "bg-white/10 hover:bg-white/20"}`}
-                      aria-label={`${name} Menü öffnen`}
+                      className={`rounded-xl px-3 py-2 text-xs font-black ${name === currentName ? "bg-red-500/20 text-slate-950 hover:bg-red-500/30" : "bg-red-500/20 text-white hover:bg-red-500/30"}`}
                     >
+                      Löschen
+                    </button>
+
+                  
