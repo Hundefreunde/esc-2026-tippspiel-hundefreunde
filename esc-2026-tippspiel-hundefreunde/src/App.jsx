@@ -374,8 +374,9 @@ export default function ESC2026Tippspiel() {
       last: x.last || "",
     }])));
 
-    if (!r.error && r.data) setResults({ ...OFFICIAL_RESULTS, ...r.data });
-    else setResults({ ...OFFICIAL_RESULTS });
+    // Das angezeigte Ergebnis bleibt immer das offizielle Ergebnis aus dem Code.
+    // Damit können alte Werte in Supabase die Auswertung nicht mehr verfälschen.
+    setResults({ ...OFFICIAL_RESULTS });
 
     if (!c.error) setChatMessages(c.data || []);
     setStatus(c.error ? "Verbunden – Chat-Tabelle fehlt noch" : "Verbunden mit Supabase ✓");
@@ -460,7 +461,9 @@ export default function ESC2026Tippspiel() {
     refreshAll();
   }
 
-  const scoringResults = useMemo(() => ({ ...OFFICIAL_RESULTS, ...results }), [results]);
+  // Wichtig: Die Auswertung nutzt immer das fest hinterlegte offizielle Ergebnis.
+  // Alte oder leere Ergebnisdaten aus Supabase dürfen die Punkte nicht überschreiben.
+  const scoringResults = useMemo(() => ({ ...OFFICIAL_RESULTS }), []);
   const leaderboard = useMemo(
     () => players
       .map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, scoringResults) }))
