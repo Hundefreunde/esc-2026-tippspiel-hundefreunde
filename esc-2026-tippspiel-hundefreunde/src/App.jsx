@@ -18,10 +18,14 @@ import {
   Wifi,
 } from "lucide-react";
 
-const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "DEINE_SUPABASE_URL";
-const SUPABASE_URL = RAW_SUPABASE_URL.replace(/\/rest\/v1\/?$/, "");
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "DEIN_SUPABASE_ANON_KEY";
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_URL = RAW_SUPABASE_URL.replace(/\/rest\/v1\/?$/, "").trim();
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+const IS_SUPABASE_CONFIGURED =
+  SUPABASE_URL.startsWith("https://") &&
+  SUPABASE_URL.includes(".supabase.co") &&
+  SUPABASE_ANON_KEY.length > 20;
+const supabase = IS_SUPABASE_CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 /*
 SUPABASE-ERWEITERUNG FÜR DEN CHAT
@@ -328,7 +332,7 @@ export default function ESC2026Tippspiel() {
   }
 
   async function savePrediction(next, message = "Tipps automatisch gespeichert!") {
-    if (!currentName) return;
+    if (!currentName || !supabase) return;
     const cleaned = {
       top1: next.top1 || "",
       top2: next.top2 || "",
@@ -357,8 +361,8 @@ export default function ESC2026Tippspiel() {
   }
 
   async function refreshAll() {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL === "DEINE_SUPABASE_URL" || SUPABASE_ANON_KEY === "DEIN_SUPABASE_ANON_KEY") {
-      setStatus("Nicht verbunden: Vercel Supabase Variablen fehlen");
+    if (!supabase) {
+      setStatus("Nicht verbunden: Vercel Supabase Variablen prüfen");
       return;
     }
 
@@ -400,6 +404,7 @@ export default function ESC2026Tippspiel() {
   useEffect(() => {
     refreshAll();
     const interval = setInterval(refreshAll, 3000);
+    if (!supabase) return;
     const channel = supabase.channel("esc2026-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_players" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_predictions" }, refreshAll)
@@ -428,7 +433,7 @@ export default function ESC2026Tippspiel() {
 
   async function login() {
     const clean = nameInput.trim();
-    if (!clean) return;
+    if (!clean || !supabase) return;
     if (!players.includes(clean)) setPlayers((prev) => [...prev, clean]);
     await supabase.from("esc2026_players").upsert({ name: clean }, { onConflict: "name" });
     await supabase.from("esc2026_predictions").upsert({ player_name: clean, ...emptyPrediction, winner: "" }, { onConflict: "player_name" });
@@ -442,7 +447,7 @@ export default function ESC2026Tippspiel() {
 
   async function sendChat() {
     const message = chatInput.trim();
-    if (!message || !currentName) return;
+    if (!message || !currentName || !supabase) return;
     setChatInput("");
     const { error } = await supabase.from("esc2026_chat").insert({ player_name: currentName, message });
     if (error) {
@@ -454,6 +459,7 @@ export default function ESC2026Tippspiel() {
   }
 
   async function updateResults(next) {
+    if (!supabase) return;
     const cleaned = { ...OFFICIAL_RESULTS, ...next };
     setResults(cleaned);
     await supabase.from("esc2026_results").upsert({ id: 1, ...cleaned, winner: cleaned.top1, updated_at: new Date().toISOString() }, { onConflict: "id" });
@@ -468,6 +474,7 @@ export default function ESC2026Tippspiel() {
 
   async function resetAll() {
     if (!confirm("Wirklich alles löschen?")) return;
+    if (!supabase) return;
     await supabase.from("esc2026_predictions").delete().neq("player_name", "");
     await supabase.from("esc2026_players").delete().neq("name", "");
     await supabase.from("esc2026_chat").delete().neq("message", "");
