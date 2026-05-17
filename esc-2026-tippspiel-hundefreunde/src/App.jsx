@@ -95,6 +95,109 @@ const DOG_VARIANTS = [
 
 const CELEBRATION_EFFECTS = ["confetti", "fireworks", "sparkles", "lightbeams"];
 
+const PROFILE_DOG_SHEETS = [
+  { breed: "Whippet", image: "/dogs/Whippet.png", cols: 4, rows: 4, count: 16 },
+  { breed: "Bulldogge", image: "/dogs/Bulldogge.png", cols: 3, rows: 3, count: 9 },
+  { breed: "Dackel", image: "/dogs/Dackel.png", cols: 4, rows: 4, count: 16 },
+];
+
+const PROFILE_DOG_OPTIONS = PROFILE_DOG_SHEETS.flatMap((sheet) =>
+  Array.from({ length: sheet.count }).map((_, index) => {
+    const col = index % sheet.cols;
+    const row = Math.floor(index / sheet.cols);
+    return {
+      id: `${sheet.breed.toLowerCase()}-${index + 1}`,
+      label: `${sheet.breed} ${index + 1}`,
+      breed: sheet.breed,
+      image: sheet.image,
+      cols: sheet.cols,
+      rows: sheet.rows,
+      col,
+      row,
+    };
+  })
+);
+
+const DEFAULT_PROFILE_DOG_ID = PROFILE_DOG_OPTIONS[0]?.id || "";
+
+function getProfileDog(id) {
+  return PROFILE_DOG_OPTIONS.find((dog) => dog.id === id) || PROFILE_DOG_OPTIONS[0];
+}
+
+function ProfileDogAvatar({ dogId, name = "", size = "md", className = "", onClick }) {
+  const dog = getProfileDog(dogId);
+  const sizeClass = size === "lg" ? "h-24 w-24" : size === "sm" ? "h-12 w-12" : "h-16 w-16";
+  const backgroundPosition = dog ? `${dog.cols === 1 ? 0 : (dog.col / (dog.cols - 1)) * 100}% ${dog.rows === 1 ? 0 : (dog.row / (dog.rows - 1)) * 100}%` : "center";
+  const backgroundSize = dog ? `${dog.cols * 100}% ${dog.rows * 100}%` : "cover";
+  const content = dog ? (
+    <span
+      aria-hidden="true"
+      className="block h-full w-full rounded-full bg-white bg-cover bg-no-repeat"
+      style={{ backgroundImage: `url(${dog.image})`, backgroundPosition, backgroundSize }}
+    />
+  ) : (
+    <span className="flex h-full w-full items-center justify-center rounded-full bg-white/90 text-xl">🐶</span>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${sizeClass} shrink-0 overflow-hidden rounded-full border-4 border-white/80 bg-white shadow-xl ring-2 ring-fuchsia-300/60 transition hover:scale-105 hover:ring-yellow-200 ${className}`}
+        title={name ? `Profilbild von ${name} ändern` : "Profilbild ändern"}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className={`${sizeClass} shrink-0 overflow-hidden rounded-full border-4 border-white/80 bg-white shadow-lg ${className}`}>{content}</div>;
+}
+
+function ProfileDogPicker({ open, selectedId, onSelect, onClose }) {
+  if (!open) return null;
+  return (
+    <AnimatePresence>
+      <motion.div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <motion.div initial={{ scale: 0.92, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.92, opacity: 0, y: 20 }} className="max-h-[92vh] w-full max-w-6xl overflow-auto rounded-[2rem] border border-white/20 bg-[#24105f]/95 p-6 text-white shadow-2xl">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-4xl font-black">Profilbild wählen</h2>
+              <p className="mt-1 text-white/80">Alle Hundeposen auf einen Blick. Klick auf eine Pose, um sie als Profilbild zu speichern.</p>
+            </div>
+            <button type="button" onClick={onClose} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-white hover:bg-white/25"><X className="h-6 w-6" /></button>
+          </div>
+
+          <div className="space-y-7">
+            {PROFILE_DOG_SHEETS.map((sheet) => {
+              const options = PROFILE_DOG_OPTIONS.filter((dog) => dog.breed === sheet.breed);
+              return (
+                <section key={sheet.breed}>
+                  <h3 className="mb-3 text-2xl font-black">{sheet.breed}</h3>
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9">
+                    {options.map((dog) => (
+                      <button
+                        key={dog.id}
+                        type="button"
+                        onClick={() => onSelect(dog.id)}
+                        className={`rounded-[1.4rem] border p-3 transition hover:-translate-y-1 hover:bg-white/20 ${selectedId === dog.id ? "border-yellow-300 bg-yellow-300/25 ring-4 ring-yellow-300/40" : "border-white/15 bg-white/10"}`}
+                      >
+                        <ProfileDogAvatar dogId={dog.id} size="lg" className="mx-auto" />
+                        <div className="mt-2 truncate text-center text-xs font-black text-white/85">{dog.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function entryLabel(country) {
   const e = ENTRIES.find((x) => x.country === country);
   return e ? `${e.country} — ${e.artist} · “${e.song}”` : "";
@@ -243,6 +346,14 @@ export default function ESC2026Tippspiel() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [scoreCelebrationKey, setScoreCelebrationKey] = useState(0);
+  const [profilePictures, setProfilePictures] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("esc2026_profilePictures") || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const [profilePickerOpen, setProfilePickerOpen] = useState(false);
 
   function showDog(message = "Gespeichert!") {
     const dog = DOG_VARIANTS[Math.floor(Math.random() * DOG_VARIANTS.length)];
@@ -263,6 +374,21 @@ export default function ESC2026Tippspiel() {
     const previous = sortedPlayers[index - 1];
     if (current.total === previous.total) return getRank(index - 1, sortedPlayers);
     return getRank(index - 1, sortedPlayers) + 1;
+  }
+
+  async function saveProfilePicture(dogId) {
+    if (!currentName || !dogId) return;
+    const next = { ...profilePictures, [currentName]: dogId };
+    setProfilePictures(next);
+    localStorage.setItem("esc2026_profilePictures", JSON.stringify(next));
+    setProfilePickerOpen(false);
+    showDog("Profilbild gespeichert!");
+
+    if (supabase) {
+      const { error } = await supabase.from("esc2026_players").upsert({ name: currentName, avatar_id: dogId }, { onConflict: "name" });
+      if (error) setStatus("Profilbild lokal gespeichert – für Live-Sync bitte in Supabase die Spalte avatar_id anlegen.");
+      else await refreshAll();
+    }
   }
 
   async function savePrediction(next, message = "Tipps automatisch gespeichert!") {
@@ -291,8 +417,13 @@ export default function ESC2026Tippspiel() {
       return;
     }
 
+    let playersRequest = await supabase.from("esc2026_players").select("name, created_at, avatar_id").order("created_at", { ascending: true });
+    if (playersRequest.error && String(playersRequest.error.message || "").includes("avatar_id")) {
+      playersRequest = await supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true });
+    }
+
     const [p, t, c] = await Promise.all([
-      supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true }),
+      Promise.resolve(playersRequest),
       supabase.from("esc2026_predictions").select("*"),
       supabase.from("esc2026_chat").select("id, player_name, message, created_at").order("created_at", { ascending: true }).limit(120),
     ]);
@@ -303,6 +434,14 @@ export default function ESC2026Tippspiel() {
     }
 
     setPlayers((p.data || []).map((x) => x.name));
+    const remoteProfilePictures = Object.fromEntries((p.data || []).filter((x) => x.avatar_id).map((x) => [x.name, x.avatar_id]));
+    if (Object.keys(remoteProfilePictures).length) {
+      setProfilePictures((prev) => {
+        const merged = { ...prev, ...remoteProfilePictures };
+        localStorage.setItem("esc2026_profilePictures", JSON.stringify(merged));
+        return merged;
+      });
+    }
     setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, { top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", last: x.last || "" }])));
     setResults({ ...OFFICIAL_RESULTS });
 
@@ -401,6 +540,7 @@ export default function ESC2026Tippspiel() {
   const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
+  const currentProfileDogId = profilePictures[currentName] || DEFAULT_PROFILE_DOG_ID;
 
   const navItems = [
     { id: "vote", label: currentName || "Tipps", icon: PawPrint },
@@ -413,6 +553,12 @@ export default function ESC2026Tippspiel() {
   return (
     <main className="min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_#ff2fb3,_transparent_30%),radial-gradient(circle_at_top_right,_#00d4ff,_transparent_26%),linear-gradient(135deg,_#1c0d5a,_#6616b8_45%,_#f0673b)] p-4 text-white md:p-8">
       <DogCelebration dog={activeDog} message={dogMessage} />
+      <ProfileDogPicker
+        open={profilePickerOpen}
+        selectedId={currentProfileDogId}
+        onSelect={saveProfilePicture}
+        onClose={() => setProfilePickerOpen(false)}
+      />
       <div className="mx-auto max-w-[1720px]">
         <div className="grid gap-6 xl:grid-cols-[1fr_390px_390px]">
           <div>
@@ -449,7 +595,14 @@ export default function ESC2026Tippspiel() {
             {currentName && view === "vote" && (
               <Card className="p-6">
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div><h2 className="text-3xl font-black">Tipps von {currentName} <span className="text-yellow-300">♛</span></h2><p className="text-white/90">Jede Auswahl wird automatisch gespeichert. Platz 1 ist automatisch dein Siegertipp.</p></div>
+                  <div className="flex items-center gap-4">
+                    <ProfileDogAvatar dogId={currentProfileDogId} name={currentName} size="lg" onClick={() => setProfilePickerOpen(true)} />
+                    <div>
+                      <h2 className="text-3xl font-black">Tipps von {currentName} <span className="text-yellow-300">♛</span></h2>
+                      <p className="text-white/90">Jede Auswahl wird automatisch gespeichert. Platz 1 ist automatisch dein Siegertipp.</p>
+                      <button type="button" onClick={() => setProfilePickerOpen(true)} className="mt-2 rounded-full bg-white/15 px-4 py-2 text-sm font-black text-white hover:bg-white/25">Profilbild ändern</button>
+                    </div>
+                  </div>
                   <Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="bg-white/20 text-white hover:bg-white/30"><Users className="mr-2 h-4 w-4" />Als anderen wählen</Button>
                 </div>
                 <div className="grid gap-4 md:grid-cols-5">
@@ -571,7 +724,7 @@ export default function ESC2026Tippspiel() {
 
             {selectedPlayerView && (
               <Card className="mt-5 p-6">
-                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex items-center gap-3"><Eye className="h-7 w-7 text-cyan-200" /><div><h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2><p className="text-white/80">Alle können die Tipps live ansehen.</p></div></div><Button onClick={() => editAsPlayer(selectedPlayerView)} className="bg-white/20 text-white hover:bg-white/30">Diese Tipps bearbeiten</Button></div>
+                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex items-center gap-3"><ProfileDogAvatar dogId={profilePictures[selectedPlayerView] || DEFAULT_PROFILE_DOG_ID} name={selectedPlayerView} /><div><h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2><p className="text-white/80">Alle können die Tipps live ansehen.</p></div></div><Button onClick={() => editAsPlayer(selectedPlayerView)} className="bg-white/20 text-white hover:bg-white/30">Diese Tipps bearbeiten</Button></div>
                 <div className="grid gap-4 md:grid-cols-5">{[1, 2, 3, 4, 5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div><div className="min-h-[90px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}</div></div>; })}</div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-3xl bg-yellow-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Siegertipp</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.top1) || "Noch kein Tipp"}</div></div><div className="rounded-3xl bg-cyan-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.last) || "Noch kein Tipp"}</div></div></div>
               </Card>
@@ -586,7 +739,7 @@ export default function ESC2026Tippspiel() {
                 {players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => (
                   <div key={name} className={`relative flex w-full items-center gap-2 rounded-2xl p-2 transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
                     <button type="button" onClick={() => selectPlayer(name)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div>
+                      <ProfileDogAvatar dogId={profilePictures[name] || PROFILE_DOG_OPTIONS[idx % PROFILE_DOG_OPTIONS.length]?.id} name={name} size="sm" />
                       <div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div>
                       <ChevronsRight className="h-5 w-5 opacity-70" />
                     </button>
@@ -603,13 +756,4 @@ export default function ESC2026Tippspiel() {
             <Card className="flex min-h-[680px] flex-col p-5">
               <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-6 w-6" /><h2 className="text-2xl font-black">Live-Chat</h2></div>
               <div className="mb-4 flex-1 space-y-3 overflow-auto rounded-3xl bg-black/15 p-3">
-                {chatMessages.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Noch keine Nachrichten.</div> : chatMessages.map((m) => <div key={m.id} className={`rounded-2xl p-3 ${m.player_name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white"}`}><div className="mb-1 text-xs font-black opacity-80">{m.player_name}</div><div className="text-sm font-semibold">{m.message}</div></div>)}
-              </div>
-              {currentName ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendChat()} placeholder="Nachricht schreiben…" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" /><Button onClick={sendChat} className="bg-fuchsia-500 text-white hover:bg-fuchsia-600"><Send className="h-5 w-5" /></Button></div> : <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Zum Chatten bitte erst mit Namen anmelden.</div>}
-            </Card>
-          </aside>
-        </div>
-      </div>
-    </main>
-  );
-}
+                {chatMessages.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Noch keine Nachrichten.</div> : chatMessages.map((m) => <div key={m.id} className={`rounded-2xl p-3 ${m.player_name === currentName ? "bg-lime
