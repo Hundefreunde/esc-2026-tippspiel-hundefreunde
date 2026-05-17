@@ -32,7 +32,7 @@ const dogEffects = ["confetti", "fireworks", "sparkles", "lightbeams"];
 const dogImages = ["Dackel", "Whippet", "Bulldogge"].flatMap((b) => [1, 2, 3].map((n) => ({ id: `${b.toLowerCase()}-${n}`, image: `/dogs/${b}-${n}.png` })));
 const sheets = [{ breed: "Whippet", cols: 4, rows: 4, count: 16 }, { breed: "Bulldogge", cols: 3, rows: 3, count: 9 }, { breed: "Dackel", cols: 4, rows: 4, count: 16 }]
   .map((s) => ({ ...s, image: `/dogs/${s.breed}.png` }));
-const hiddenDogIds = new Set(["whippet-1", "whippet-2", "whippet-9", "whippet-13"]);
+const hiddenDogIds = new Set(["whippet-1", "whippet-2", "whippet-3", "whippet-7", "whippet-9", "whippet-13", "whippet-15", "dackel-1", "dackel-4", "dackel-5", "dackel-10", "dackel-12", "dackel-13", "dackel-15"]);
 const dogOptions = sheets
   .flatMap((s) => Array.from({ length: s.count }, (_, i) => ({ ...s, col: i % s.cols, row: Math.floor(i / s.cols), id: `${s.breed.toLowerCase()}-${i + 1}`, label: `${s.breed} ${i + 1}` })))
   .filter((d) => !hiddenDogIds.has(d.id));
@@ -49,10 +49,10 @@ function SectionTitle({ icon: Icon, title, desc, className = "" }) { return <div
 
 function Avatar({ dogId, name = "", size = "md", className = "", onClick }) {
   const dog = dogOptions.find((d) => d.id === dogId) || dogOptions[0];
-  const sizeClass = size === "lg" ? "h-24 w-24" : size === "sm" ? "h-12 w-12" : "h-16 w-16";
+  const sizeClass = size === "lg" ? "h-24 w-24" : size === "sm" ? "h-14 w-14" : "h-18 w-18";
   const style = dog ? { backgroundImage: `url(${dog.image})`, backgroundPosition: `${dog.cols === 1 ? 0 : (dog.col / (dog.cols - 1)) * 100}% ${dog.rows === 1 ? 0 : (dog.row / (dog.rows - 1)) * 100}%`, backgroundSize: `${dog.cols * 100}% ${dog.rows * 100}%` } : {};
-  const content = dog ? <span className="flex h-full w-full items-center justify-center rounded-full bg-white p-[10%]"><span aria-hidden className="block h-full w-full rounded-full bg-contain bg-center bg-no-repeat" style={style} /></span> : <span className="flex h-full w-full items-center justify-center rounded-full bg-white/90 text-xl">🐶</span>;
-  const cls = cn(sizeClass, "shrink-0 overflow-hidden rounded-full border-4 border-white/80 bg-white", onClick ? "shadow-xl ring-2 ring-fuchsia-300/60 transition hover:scale-105 hover:ring-yellow-200" : "shadow-lg", className);
+  const content = dog ? <span className="flex h-full w-full items-center justify-center rounded-[1.4rem] bg-white p-[18%]"><span aria-hidden className="block h-full w-full bg-contain bg-center bg-no-repeat" style={style} /></span> : <span className="flex h-full w-full items-center justify-center rounded-[1.4rem] bg-white/90 text-xl">🐶</span>;
+  const cls = cn(sizeClass, "shrink-0 overflow-hidden rounded-[1.6rem] border-4 border-white/80 bg-white", onClick ? "shadow-xl ring-2 ring-fuchsia-300/60 transition hover:scale-105 hover:ring-yellow-200" : "shadow-lg", className);
   return onClick ? <button type="button" onClick={onClick} className={cls} title={name ? `Profilbild von ${name} ändern` : "Profilbild ändern"}>{content}</button> : <div className={cls}>{content}</div>;
 }
 
@@ -62,7 +62,7 @@ function DogPicker({ open, selectedId, onSelect, onClose }) {
     <motion.div initial={{ scale: .92, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: .92, opacity: 0, y: 20 }} className="max-h-[92vh] w-full max-w-6xl overflow-auto rounded-[2rem] border border-white/20 bg-[#24105f]/95 p-6 text-white shadow-2xl">
       <div className="mb-5 flex items-start justify-between gap-4"><div><h2 className="text-4xl font-black">Profilbild wählen</h2><p className="mt-1 text-white/80">Klick auf eine Pose, um sie als Profilbild zu speichern.</p></div><button onClick={onClose} className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 hover:bg-white/25"><X /></button></div>
       {sheets.map((s) => <section key={s.breed} className="mb-7"><h3 className="mb-3 text-2xl font-black">{s.breed}</h3><div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-9">
-        {dogOptions.filter((d) => d.breed === s.breed).map((d) => <button key={d.id} onClick={() => onSelect(d.id)} className={cn("rounded-[1.4rem] border p-3 transition hover:-translate-y-1 hover:bg-white/20", selectedId === d.id ? "border-yellow-300 bg-yellow-300/25 ring-4 ring-yellow-300/40" : "border-white/15 bg-white/10")}><Avatar dogId={d.id} size="lg" className="mx-auto" /><div className="mt-2 truncate text-center text-xs font-black text-white/85">{d.label}</div></button>)}
+        {dogOptions.filter((d) => d.breed === s.breed).map((d) => <button key={d.id} onClick={() => onSelect(d.id)} className={cn("rounded-[1.4rem] border p-3 transition hover:-translate-y-1 hover:bg-white/20", selectedId === d.id ? "border-yellow-300 bg-yellow-300/25 ring-4 ring-yellow-300/40" : "border-white/15 bg-white/10")}><Avatar dogId={d.id} size="lg" className="mx-auto" /></button>)}
       </div></section>)}
     </motion.div>
   </motion.div></AnimatePresence>;
