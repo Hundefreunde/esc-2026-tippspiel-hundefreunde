@@ -460,7 +460,13 @@ export default function ESC2026Tippspiel() {
     refreshAll();
   }
 
-  const leaderboard = useMemo(() => players.map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, results) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)), [players, predictions, results]);
+  const scoringResults = useMemo(() => ({ ...OFFICIAL_RESULTS, ...results }), [results]);
+  const leaderboard = useMemo(
+    () => players
+      .map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, scoringResults) }))
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)),
+    [players, predictions, scoringResults]
+  );
   const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
@@ -554,8 +560,8 @@ export default function ESC2026Tippspiel() {
               <div className="space-y-6">
                 <Card className="p-6">
                   <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Plakative Punkteübersicht: richtig, teilweise richtig und daneben.</p></div>
-                    {leaderboard[0] && <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950"><div className="text-sm font-black uppercase tracking-widest">Gewinner:in</div><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="text-xl font-bold">{leaderboard[0].total} Punkte</div></div>}
+                    <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Das Ranking wird automatisch aus allen gespeicherten Tipps und dem offiziellen Ergebnis berechnet. Jede Änderung aktualisiert die Punkte sofort.</p></div>
+                    {leaderboard[0] && <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950"><div className="text-sm font-black uppercase tracking-widest">Aktuelle:r Gewinner:in</div><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="text-xl font-bold">{leaderboard[0].total} Punkte</div></div>}
                   </div>
 
                   <div className="grid gap-4">
