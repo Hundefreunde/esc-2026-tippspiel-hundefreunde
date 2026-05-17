@@ -141,7 +141,10 @@ export default function ESC2026Tippspiel() {
   const choosePlayer = (name) => { setSelectedPlayer(name); setView("vote"); };
   const isOwnProfile = !selectedPlayer || selectedPlayer === currentName;
 
-  const leaderboard = useMemo(() => { const sorted = players.map((name) => ({ name, ...scorePrediction(predictions[name]) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)); let lastTotal, lastRank = 0; return sorted.map((p, i) => ({ ...p, rank: p.total === lastTotal ? lastRank : (lastTotal = p.total, lastRank = i + 1) })); }, [players, predictions]);
+  const leaderboard = useMemo(() => players
+    .map((name) => ({ name, ...scorePrediction(predictions[name]) }))
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+    .map((p, i, list) => ({ ...p, rank: i > 0 && p.total === list[i - 1].total ? list[i - 1].rank : i + 1 })), [players, predictions]);
   const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
   const winners = leaderboard.length ? leaderboard.filter((p) => p.total === leaderboard[0].total) : [];
   const viewed = predictions[selectedPlayer] || emptyPrediction;
