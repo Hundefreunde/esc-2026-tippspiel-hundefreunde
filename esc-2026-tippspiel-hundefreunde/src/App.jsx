@@ -745,13 +745,12 @@ export default function ESC2026Tippspiel() {
                     </button>
 
                     <button
+                      type="button"
                       onClick={async (event) => {
                         event.stopPropagation();
                         await removePlayer(name);
                       }}
-                      className={`rounded-xl px-3 py-2 text-xs font-black ${name === currentName ? "bg-red-500/20 text-slate-950 hover:bg-red-500/30" : "bg-red-500/20 text-white hover:bg-red-500/30"}`}
-                    >
-                      Löschen
-                    </button>
-
-                  
+                      className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-black transition ${
+                        name === currentName
+                          ? "bg-red-500/20 text-slate-950 hover:bg-red-500/35"
+             
