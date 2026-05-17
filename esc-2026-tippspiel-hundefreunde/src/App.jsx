@@ -342,10 +342,18 @@ export default function ESC2026Tippspiel() {
 
   function getRank(index, sortedPlayers) {
     if (index === 0) return 1;
+
     const current = sortedPlayers[index];
     const previous = sortedPlayers[index - 1];
-    if (current.total === previous.total) return getRank(index - 1, sortedPlayers);
-    return index + 1;
+
+    // Gleiche Punkte = gleicher Platz
+    if (current.total === previous.total) {
+      return getRank(index - 1, sortedPlayers);
+    }
+
+    // Danach direkt der nächste Platz (1,1,2,3 statt 1,1,3,4)
+    const previousRank = getRank(index - 1, sortedPlayers);
+    return previousRank + 1;
   }
 
   async function savePrediction(next, message = "Tipps automatisch gespeichert!") {
