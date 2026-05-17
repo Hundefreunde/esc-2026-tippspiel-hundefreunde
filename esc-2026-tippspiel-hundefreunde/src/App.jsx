@@ -49,9 +49,15 @@ function SectionTitle({ icon: Icon, title, desc, className = "" }) { return <div
 
 function Avatar({ dogId, name = "", size = "md", className = "", onClick }) {
   const dog = dogOptions.find((d) => d.id === dogId) || dogOptions[0];
-  const sizeClass = size === "lg" ? "h-24 w-24" : size === "sm" ? "h-14 w-14" : "h-18 w-18";
-  const style = dog ? { backgroundImage: `url(${dog.image})`, backgroundPosition: `${dog.cols === 1 ? 0 : (dog.col / (dog.cols - 1)) * 100}% ${dog.rows === 1 ? 0 : (dog.row / (dog.rows - 1)) * 100}%`, backgroundSize: `${dog.cols * 100}% ${dog.rows * 100}%` } : {};
-  const content = dog ? <span className="flex h-full w-full items-center justify-center rounded-[1.4rem] bg-white p-[18%]"><span aria-hidden className="block h-full w-full bg-contain bg-center bg-no-repeat" style={style} /></span> : <span className="flex h-full w-full items-center justify-center rounded-[1.4rem] bg-white/90 text-xl">🐶</span>;
+  const sizeClass = size === "lg" ? "h-28 w-28" : size === "sm" ? "h-16 w-16" : "h-20 w-20";
+  const style = dog ? {
+    backgroundImage: `url(${dog.image})`,
+    backgroundPosition: `${dog.cols === 1 ? 0 : (dog.col / (dog.cols - 1)) * 100}% ${dog.rows === 1 ? 0 : (dog.row / (dog.rows - 1)) * 100}%`,
+    backgroundSize: `${dog.cols * 100}% ${dog.rows * 100}%`,
+    transform: "scale(0.86)",
+    transformOrigin: "center",
+  } : {};
+  const content = dog ? <span className="flex h-full w-full items-center justify-center rounded-[1.4rem] bg-white p-[6%]"><span aria-hidden className="block h-full w-full bg-contain bg-center bg-no-repeat" style={style} /></span> : <span className="flex h-full w-full items-center justify-center rounded-[1.4rem] bg-white/90 text-xl">🐶</span>;
   const cls = cn(sizeClass, "shrink-0 overflow-hidden rounded-[1.6rem] border-4 border-white/80 bg-white", onClick ? "shadow-xl ring-2 ring-fuchsia-300/60 transition hover:scale-105 hover:ring-yellow-200" : "shadow-lg", className);
   return onClick ? <button type="button" onClick={onClick} className={cls} title={name ? `Profilbild von ${name} ändern` : "Profilbild ändern"}>{content}</button> : <div className={cls}>{content}</div>;
 }
@@ -141,10 +147,13 @@ export default function ESC2026Tippspiel() {
   const choosePlayer = (name) => { setSelectedPlayer(name); setView("vote"); };
   const isOwnProfile = !selectedPlayer || selectedPlayer === currentName;
 
-  const leaderboard = useMemo(() => players
-    .map((name) => ({ name, ...scorePrediction(predictions[name]) }))
-    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
-    .map((p, i, list) => ({ ...p, rank: i > 0 && p.total === list[i - 1].total ? list[i - 1].rank : i + 1 })), [players, predictions]);
+  const leaderboard = useMemo(() => {
+    const sorted = players
+      .map((name) => ({ name, ...scorePrediction(predictions[name]) }))
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+    const scoreRanks = [...new Set(sorted.map((p) => p.total))].reduce((map, score, index) => ({ ...map, [score]: index + 1 }), {});
+    return sorted.map((p) => ({ ...p, rank: scoreRanks[p.total] }));
+  }, [players, predictions]);
   const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
   const winners = leaderboard.length ? leaderboard.filter((p) => p.total === leaderboard[0].total) : [];
   const viewed = predictions[selectedPlayer] || emptyPrediction;
