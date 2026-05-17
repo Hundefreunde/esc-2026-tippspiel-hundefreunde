@@ -385,8 +385,8 @@ export default function ESC2026Tippspiel() {
     showDog("Profilbild gespeichert!");
 
     if (supabase) {
-      const { error } = await supabase.from("esc2026_players").upsert({ name: currentName, avatar_id: dogId }, { onConflict: "name" });
-      if (error) setStatus("Profilbild lokal gespeichert – für Live-Sync bitte in Supabase die Spalte avatar_id anlegen.");
+      const { error } = await supabase.from("esc2026_profiles").upsert({ player_name: currentName, avatar_id: dogId, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
+      if (error) setStatus("Profilbild lokal gespeichert – für Live-Sync bitte Tabelle esc2026_profiles anlegen.");
       else await refreshAll();
     }
   }
@@ -417,15 +417,13 @@ export default function ESC2026Tippspiel() {
       return;
     }
 
-    let playersRequest = await supabase.from("esc2026_players").select("name, created_at, avatar_id").order("created_at", { ascending: true });
-    if (playersRequest.error && String(playersRequest.error.message || "").includes("avatar_id")) {
-      playersRequest = await supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true });
-    }
+    const playersRequest = await supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true });
 
-    const [p, t, c] = await Promise.all([
+    const [p, t, c, a] = await Promise.all([
       Promise.resolve(playersRequest),
       supabase.from("esc2026_predictions").select("*"),
       supabase.from("esc2026_chat").select("id, player_name, message, created_at").order("created_at", { ascending: true }).limit(120),
+      supabase.from("esc2026_profiles").select("player_name, avatar_id"),
     ]);
 
     if (p.error || t.error) {
@@ -434,8 +432,8 @@ export default function ESC2026Tippspiel() {
     }
 
     setPlayers((p.data || []).map((x) => x.name));
-    const remoteProfilePictures = Object.fromEntries((p.data || []).filter((x) => x.avatar_id).map((x) => [x.name, x.avatar_id]));
-    if (Object.keys(remoteProfilePictures).length) {
+    const remoteProfilePictures = Object.fromEntries((a.data || []).filter((x) => x.avatar_id).map((x) => [x.player_name, x.avatar_id]));
+    if (!a.error && Object.keys(remoteProfilePictures).length) {
       setProfilePictures((prev) => {
         const merged = { ...prev, ...remoteProfilePictures };
         localStorage.setItem("esc2026_profilePictures", JSON.stringify(merged));
@@ -701,59 +699,4 @@ export default function ESC2026Tippspiel() {
                       </div>
                     )}
                   </div>
-                </div>
-              </Card>
-            )}
-
-            {view === "score" && (
-              <>
-                <div key={scoreCelebrationKey} className="pointer-events-none fixed inset-0 z-[80] overflow-hidden"><CelebrationEffect type="confetti" /><CelebrationEffect type="lightbeams" /></div>
-                <div className="space-y-6">
-                  <Card className="p-6">
-                    <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                      <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Das Ranking wird automatisch aus allen gespeicherten Tipps und dem offiziellen Ergebnis berechnet. Jede Änderung aktualisiert die Punkte sofort.</p></div>
-                      {leaderboard[0] && <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950"><div className="text-sm font-black uppercase tracking-widest">Aktuelle Gewinner:innen</div><div className="text-4xl font-black">{leaderboard.filter((p) => p.rank === 1).map((p) => p.name).join(" & ")}</div><div className="text-xl font-bold">{leaderboard[0].total} Punkte</div></div>}
-                    </div>
-                    <div className="grid gap-4">
-                      {leaderboard.map((player) => <div key={player.name} className="rounded-[2rem] bg-white/10 p-4"><div className="mb-3 flex items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{player.rank}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div></div></div><div className="text-right"><div className="text-3xl font-black">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div></div><div className="mb-3 h-4 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(4, (player.total / maxScore) * 100)}%` }} /></div><div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">{player.rows.map((row) => <div key={row.label} className={`rounded-2xl p-3 text-sm ${row.correct ? "bg-lime-300 text-slate-950" : row.partial ? "bg-yellow-300 text-slate-950" : "bg-white/10 text-white"}`}><div className="mb-1 flex items-center justify-between"><b>{row.label}</b><span className="font-black">{row.points}</span></div><div className="truncate opacity-90">{entryLabel(row.pick) || "–"}</div><div className="mt-1 text-xs font-bold opacity-80">{row.reason}</div></div>)}</div></div>)}
-                    </div>
-                  </Card>
-                </div>
-              </>
-            )}
-
-            {selectedPlayerView && (
-              <Card className="mt-5 p-6">
-                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex items-center gap-3"><ProfileDogAvatar dogId={profilePictures[selectedPlayerView] || DEFAULT_PROFILE_DOG_ID} name={selectedPlayerView} /><div><h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2><p className="text-white/80">Alle können die Tipps live ansehen.</p></div></div><Button onClick={() => editAsPlayer(selectedPlayerView)} className="bg-white/20 text-white hover:bg-white/30">Diese Tipps bearbeiten</Button></div>
-                <div className="grid gap-4 md:grid-cols-5">{[1, 2, 3, 4, 5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div><div className="min-h-[90px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}</div></div>; })}</div>
-                <div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-3xl bg-yellow-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Siegertipp</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.top1) || "Noch kein Tipp"}</div></div><div className="rounded-3xl bg-cyan-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.last) || "Noch kein Tipp"}</div></div></div>
-              </Card>
-            )}
-          </div>
-
-          <aside className="xl:sticky xl:top-6 xl:self-start">
-            <Card className="min-h-[680px] p-5">
-              <div className="mb-4 flex items-center gap-2"><Users className="h-6 w-6" /><h2 className="text-2xl font-black">Mitspieler:innen ({players.length})</h2></div>
-              <p className="mb-4 text-sm text-white/80">Namen anklicken, um Tipps anzusehen.</p>
-              <div className="max-h-[720px] space-y-2 overflow-auto pr-1">
-                {players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => (
-                  <div key={name} className={`relative flex w-full items-center gap-2 rounded-2xl p-2 transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
-                    <button type="button" onClick={() => selectPlayer(name)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                      <ProfileDogAvatar dogId={profilePictures[name] || PROFILE_DOG_OPTIONS[idx % PROFILE_DOG_OPTIONS.length]?.id} name={name} size="sm" />
-                      <div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div>
-                      <ChevronsRight className="h-5 w-5 opacity-70" />
-                    </button>
-                    <button type="button" onClick={(event) => { event.stopPropagation(); removePlayer(name); }} className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-black transition ${name === currentName ? "bg-red-500/20 text-slate-950 hover:bg-red-500/35" : "bg-red-500/20 text-white hover:bg-red-500/35"}`} aria-label={`${name} entfernen`}>
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </aside>
-
-          <aside className="xl:sticky xl:top-6 xl:self-start">
-            <Card className="flex min-h-[680px] flex-col p-5">
-              <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-6 w-6" /><h2 className="text-2xl font-black">Live-Chat</h2></div>
-              <div className="mb-4 flex-1 space-y-3 overflow-auto rounded-3xl bg-black/15 p-3">
-                {chatMessages.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Noch keine Nachrichten.</div> : chatMessages.map((m) => <div key={m.id} className={`rounded-2xl p-3 ${m.player_name === currentName ? "bg-lime
+                </div
