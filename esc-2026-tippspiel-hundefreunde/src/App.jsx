@@ -5,58 +5,24 @@ import {
   Archive,
   BarChart3,
   ChevronsRight,
-  Crown,
   Eye,
-  Flag,
   MessageCircle,
   Music2,
   PawPrint,
-  MoreVertical,
-  RotateCcw,
   Send,
-  Trash2,
   Sparkles,
   Target,
   Trophy,
   Users,
   Wifi,
+  X,
 } from "lucide-react";
 
 const RAW_SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_URL = RAW_SUPABASE_URL.replace(/\/rest\/v1\/?$/, "").trim();
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
-const IS_SUPABASE_CONFIGURED =
-  SUPABASE_URL.startsWith("https://") &&
-  SUPABASE_URL.includes(".supabase.co") &&
-  SUPABASE_ANON_KEY.length > 20;
+const IS_SUPABASE_CONFIGURED = SUPABASE_URL.startsWith("https://") && SUPABASE_URL.includes(".supabase.co") && SUPABASE_ANON_KEY.length > 20;
 const supabase = IS_SUPABASE_CONFIGURED ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-/*
-SUPABASE-ERWEITERUNG FÜR DEN CHAT
-Bitte einmal in Supabase > SQL Editor > New query > Run ausführen:
-
-create table if not exists esc2026_chat (
-  id uuid primary key default gen_random_uuid(),
-  player_name text not null,
-  message text not null,
-  created_at timestamptz default now()
-);
-
-alter table esc2026_chat enable row level security;
-
-drop policy if exists "read chat" on esc2026_chat;
-drop policy if exists "insert chat" on esc2026_chat;
-
-create policy "read chat"
-on esc2026_chat
-for select
-using (true);
-
-create policy "insert chat"
-on esc2026_chat
-for insert
-with check (true);
-*/
 
 const ENTRIES = [
   { country: "Denmark", artist: "Søren Torpegaard Lund", song: "Før Vi Går Hjem" },
@@ -97,14 +63,6 @@ const OFFICIAL_RESULTS = {
   last: "United Kingdom",
 };
 
-const OFFICIAL_TOP5 = [
-  OFFICIAL_RESULTS.top1,
-  OFFICIAL_RESULTS.top2,
-  OFFICIAL_RESULTS.top3,
-  OFFICIAL_RESULTS.top4,
-  OFFICIAL_RESULTS.top5,
-];
-
 const COUNTRY_FLAGS = {
   Bulgaria: "🇧🇬",
   Israel: "🇮🇱",
@@ -115,48 +73,12 @@ const COUNTRY_FLAGS = {
 };
 
 const RESULT_STORIES = [
-  {
-    place: 1,
-    country: "Bulgaria",
-    artist: "DARA",
-    song: "Bangaranga",
-    summary: "Bulgaria gewann mit einem energiegeladenen Pop-Auftritt, der moderne Club-Elemente mit folkloristischen Anklängen verbindet. Der Song wirkt wie eine große Final-Hymne: laut, direkt und sofort wiedererkennbar.",
-  },
-  {
-    place: 2,
-    country: "Israel",
-    artist: "Noam Bettan",
-    song: "Michelle",
-    summary: "Israel landete mit einer emotionalen Performance auf Platz 2. „Michelle“ setzt auf eine klare Stimme, große Melodiebögen und eine persönliche, balladenhafte Inszenierung.",
-  },
-  {
-    place: 3,
-    country: "Romania",
-    artist: "Alexandra Căpitănescu",
-    song: "Choke Me",
-    summary: "Rumänien erreichte Platz 3 mit einem dramatischen Pop-Rock-Auftritt. Der Song lebt von Spannung, dunkler Energie und einer kraftvollen Bühnenpräsenz.",
-  },
-  {
-    place: 4,
-    country: "Australia",
-    artist: "Delta Goodrem",
-    song: "Eclipse",
-    summary: "Australien überzeugte mit einer großen, professionellen Pop-Performance. „Eclipse“ kombiniert starke Vocals mit einem glänzenden, emotionalen Finale.",
-  },
-  {
-    place: 5,
-    country: "Italy",
-    artist: "Sal Da Vinci",
-    song: "Per Sempre Sì",
-    summary: "Italien erreichte die Top 5 mit einer warmen, melodischen Nummer. Der Beitrag setzt auf Gefühl, klassische italienische Pop-Atmosphäre und eine elegante Präsentation.",
-  },
-  {
-    place: "Letzter Platz",
-    country: "United Kingdom",
-    artist: "LOOK MUM NO COMPUTER",
-    song: "Eins, Zwei, Drei",
-    summary: "Das Vereinigte Königreich landete auf dem letzten Platz. Der Beitrag war auffällig und experimentell, konnte aber beim Voting nicht genügend Unterstützung sammeln.",
-  },
+  { place: 1, country: "Bulgaria", artist: "DARA", song: "Bangaranga", summary: "Bulgaria gewann mit einem energiegeladenen Pop-Auftritt, der moderne Club-Elemente mit folkloristischen Anklängen verbindet. Der Song wirkt wie eine große Final-Hymne: laut, direkt und sofort wiedererkennbar." },
+  { place: 2, country: "Israel", artist: "Noam Bettan", song: "Michelle", summary: "Israel landete mit einer emotionalen Performance auf Platz 2. „Michelle“ setzt auf eine klare Stimme, große Melodiebögen und eine persönliche, balladenhafte Inszenierung." },
+  { place: 3, country: "Romania", artist: "Alexandra Căpitănescu", song: "Choke Me", summary: "Rumänien erreichte Platz 3 mit einem dramatischen Pop-Rock-Auftritt. Der Song lebt von Spannung, dunkler Energie und einer kraftvollen Bühnenpräsenz." },
+  { place: 4, country: "Australia", artist: "Delta Goodrem", song: "Eclipse", summary: "Australien überzeugte mit einer großen, professionellen Pop-Performance. „Eclipse“ kombiniert starke Vocals mit einem glänzenden, emotionalen Finale." },
+  { place: 5, country: "Italy", artist: "Sal Da Vinci", song: "Per Sempre Sì", summary: "Italien erreichte die Top 5 mit einer warmen, melodischen Nummer. Der Beitrag setzt auf Gefühl, klassische italienische Pop-Atmosphäre und eine elegante Präsentation." },
+  { place: "Letzter Platz", country: "United Kingdom", artist: "LOOK MUM NO COMPUTER", song: "Eins, Zwei, Drei", summary: "Das Vereinigte Königreich landete auf dem letzten Platz. Der Beitrag war auffällig und experimentell, konnte aber beim Voting nicht genügend Unterstützung sammeln." },
 ];
 
 const DOG_VARIANTS = [
@@ -204,7 +126,15 @@ function SelectEntry({ value, onChange, label, used = [] }) {
 
 function CelebrationEffect({ type }) {
   if (type === "fireworks") {
-    return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 9 }).map((_, i) => <motion.div key={i} className="absolute h-2 w-2 rounded-full bg-white shadow-[0_0_24px_rgba(255,255,255,.95)]" style={{ left: `${12 + (i * 10) % 82}%`, top: `${12 + (i * 17) % 62}%` }} initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 1.1, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.25, delay: i * 0.08 }}>{Array.from({ length: 10 }).map((_, j) => <motion.span key={j} className="absolute left-1/2 top-1/2 h-1 w-12 origin-left rounded-full bg-gradient-to-r from-yellow-200 via-fuchsia-300 to-transparent" style={{ rotate: `${j * 36}deg` }} initial={{ scaleX: 0 }} animate={{ scaleX: [0, 1, 0] }} transition={{ duration: 1.2, delay: i * 0.08 }} />)}</motion.div>)}</div>;
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        {Array.from({ length: 9 }).map((_, i) => (
+          <motion.div key={i} className="absolute h-2 w-2 rounded-full bg-white shadow-[0_0_24px_rgba(255,255,255,.95)]" style={{ left: `${12 + (i * 10) % 82}%`, top: `${12 + (i * 17) % 62}%` }} initial={{ scale: 0, opacity: 0 }} animate={{ scale: [0, 1.1, 0], opacity: [0, 1, 0] }} transition={{ duration: 1.25, delay: i * 0.08 }}>
+            {Array.from({ length: 10 }).map((_, j) => <motion.span key={j} className="absolute left-1/2 top-1/2 h-1 w-12 origin-left rounded-full bg-gradient-to-r from-yellow-200 via-fuchsia-300 to-transparent" style={{ rotate: `${j * 36}deg` }} initial={{ scaleX: 0 }} animate={{ scaleX: [0, 1, 0] }} transition={{ duration: 1.2, delay: i * 0.08 }} />)}
+          </motion.div>
+        ))}
+      </div>
+    );
   }
   if (type === "lightbeams") {
     return <div className="absolute inset-0 overflow-hidden">{Array.from({ length: 8 }).map((_, i) => <motion.div key={i} className="absolute left-1/2 top-1/2 h-[150vh] w-16 origin-bottom rounded-full bg-gradient-to-t from-white/30 via-fuchsia-300/20 to-transparent blur-xl" style={{ rotate: `${i * 45}deg` }} initial={{ opacity: 0, scaleY: 0.25 }} animate={{ opacity: [0, 0.8, 0], scaleY: [0.25, 1, 0.4] }} transition={{ duration: 1.8, delay: i * 0.04 }} />)}</div>;
@@ -234,15 +164,7 @@ function ResultFlag({ country }) {
   return (
     <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-white/20 via-purple-800/35 to-cyan-500/25 shadow-inner">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_25%,rgba(255,255,255,.28),transparent_30%),radial-gradient(circle_at_70%_80%,rgba(255,255,255,.14),transparent_28%)]" />
-      <motion.div
-        initial={{ scale: 0.86, rotate: -4 }}
-        animate={{ scale: [0.86, 1.02, 1], rotate: [-4, 2, 0] }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        className="relative text-[7rem] leading-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.35)]"
-        aria-label={`Flagge ${country}`}
-      >
-        {COUNTRY_FLAGS[country] || "🏳️"}
-      </motion.div>
+      <motion.div initial={{ scale: 0.86, rotate: -4 }} animate={{ scale: [0.86, 1.02, 1], rotate: [-4, 2, 0] }} transition={{ duration: 0.7, ease: "easeOut" }} className="relative text-[7rem] leading-none drop-shadow-[0_18px_30px_rgba(0,0,0,0.35)]" aria-label={`Flagge ${country}`}>{COUNTRY_FLAGS[country] || "🏳️"}</motion.div>
     </div>
   );
 }
@@ -300,13 +222,7 @@ function PointsOverview() {
     <Card className="p-6">
       <div className="mb-6 flex items-center gap-3"><Target className="h-8 w-8 text-yellow-200" /><div><h2 className="text-4xl font-black">Punkteübersicht</h2><p className="text-white/80">So werden die Tipps im Hundefreunde Wettstudio gewertet.</p></div></div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {rules.map((rule) => (
-          <div key={rule.title} className="rounded-[2rem] bg-white/10 p-5 text-center">
-            <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-yellow-300 text-3xl font-black text-slate-950">{rule.points}</div>
-            <h3 className="text-xl font-black">{rule.title}</h3>
-            <p className="mt-2 text-sm text-white/80">{rule.desc}</p>
-          </div>
-        ))}
+        {rules.map((rule) => <div key={rule.title} className="rounded-[2rem] bg-white/10 p-5 text-center"><div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-full bg-yellow-300 text-3xl font-black text-slate-950">{rule.points}</div><h3 className="text-xl font-black">{rule.title}</h3><p className="mt-2 text-sm text-white/80">{rule.desc}</p></div>)}
       </div>
     </Card>
   );
@@ -327,7 +243,6 @@ export default function ESC2026Tippspiel() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [scoreCelebrationKey, setScoreCelebrationKey] = useState(0);
-  const [playerMenuOpen, setPlayerMenuOpen] = useState("");
 
   function showDog(message = "Gespeichert!") {
     const dog = DOG_VARIANTS[Math.floor(Math.random() * DOG_VARIANTS.length)];
@@ -339,41 +254,22 @@ export default function ESC2026Tippspiel() {
 
   function openView(nextView) {
     setView(nextView);
-    if (nextView === "score") {
-      setScoreCelebrationKey((value) => value + 1);
-    }
+    if (nextView === "score") setScoreCelebrationKey((value) => value + 1);
   }
 
   function getRank(index, sortedPlayers) {
     if (index === 0) return 1;
-
     const current = sortedPlayers[index];
     const previous = sortedPlayers[index - 1];
-
-    // Gleiche Punkte = gleicher Platz
-    if (current.total === previous.total) {
-      return getRank(index - 1, sortedPlayers);
-    }
-
-    // Danach direkt der nächste Platz (1,1,2,3 statt 1,1,3,4)
-    const previousRank = getRank(index - 1, sortedPlayers);
-    return previousRank + 1;
+    if (current.total === previous.total) return getRank(index - 1, sortedPlayers);
+    return getRank(index - 1, sortedPlayers) + 1;
   }
 
   async function savePrediction(next, message = "Tipps automatisch gespeichert!") {
     if (!currentName || !supabase) return;
-    const cleaned = {
-      top1: next.top1 || "",
-      top2: next.top2 || "",
-      top3: next.top3 || "",
-      top4: next.top4 || "",
-      top5: next.top5 || "",
-      last: next.last || "",
-    };
-
+    const cleaned = { top1: next.top1 || "", top2: next.top2 || "", top3: next.top3 || "", top4: next.top4 || "", top5: next.top5 || "", last: next.last || "" };
     setDraftPrediction(cleaned);
     setPredictions((prev) => ({ ...prev, [currentName]: cleaned }));
-
     const { error } = await supabase.from("esc2026_predictions").upsert({ player_name: currentName, ...cleaned, winner: cleaned.top1, updated_at: new Date().toISOString() }, { onConflict: "player_name" });
     if (error) {
       setStatus(`Speichern fehlgeschlagen: ${error.message}`);
@@ -395,10 +291,9 @@ export default function ESC2026Tippspiel() {
       return;
     }
 
-    const [p, t, r, c] = await Promise.all([
+    const [p, t, c] = await Promise.all([
       supabase.from("esc2026_players").select("name, created_at").order("created_at", { ascending: true }),
       supabase.from("esc2026_predictions").select("*"),
-      supabase.from("esc2026_results").select("*").eq("id", 1).maybeSingle(),
       supabase.from("esc2026_chat").select("id, player_name, message, created_at").order("created_at", { ascending: true }).limit(120),
     ]);
 
@@ -408,17 +303,7 @@ export default function ESC2026Tippspiel() {
     }
 
     setPlayers((p.data || []).map((x) => x.name));
-    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, {
-      top1: x.top1 || "",
-      top2: x.top2 || "",
-      top3: x.top3 || "",
-      top4: x.top4 || "",
-      top5: x.top5 || "",
-      last: x.last || "",
-    }])));
-
-    // Das angezeigte Ergebnis bleibt immer das offizielle Ergebnis aus dem Code.
-    // Damit können alte Werte in Supabase die Auswertung nicht mehr verfälschen.
+    setPredictions(Object.fromEntries((t.data || []).map((x) => [x.player_name, { top1: x.top1 || "", top2: x.top2 || "", top3: x.top3 || "", top4: x.top4 || "", top5: x.top5 || "", last: x.last || "" }])));
     setResults({ ...OFFICIAL_RESULTS });
 
     if (!c.error) {
@@ -433,11 +318,10 @@ export default function ESC2026Tippspiel() {
   useEffect(() => {
     refreshAll();
     const interval = setInterval(refreshAll, 3000);
-    if (!supabase) return;
+    if (!supabase) return () => clearInterval(interval);
     const channel = supabase.channel("esc2026-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_players" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_predictions" }, refreshAll)
-      .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_results" }, refreshAll)
       .on("postgres_changes", { event: "*", schema: "public", table: "esc2026_chat" }, refreshAll)
       .subscribe();
     return () => { clearInterval(interval); supabase.removeChannel(channel); };
@@ -447,7 +331,7 @@ export default function ESC2026Tippspiel() {
     setDraftPrediction(predictions[currentName] || { ...emptyPrediction });
   }, [currentName, predictions]);
 
-  async function selectPlayer(name) {
+  function selectPlayer(name) {
     setSelectedPlayerView(name);
     setView("vote");
   }
@@ -487,56 +371,33 @@ export default function ESC2026Tippspiel() {
     }
   }
 
-  async function updateResults(next) {
-    if (!supabase) return;
-    const cleaned = { ...OFFICIAL_RESULTS, ...next };
-    setResults(cleaned);
-    await supabase.from("esc2026_results").upsert({ id: 1, ...cleaned, winner: cleaned.top1, updated_at: new Date().toISOString() }, { onConflict: "id" });
-    refreshAll();
-  }
-
   async function applyOfficialResults() {
-    await updateResults(OFFICIAL_RESULTS);
+    if (supabase) await supabase.from("esc2026_results").upsert({ id: 1, ...OFFICIAL_RESULTS, winner: OFFICIAL_RESULTS.top1, updated_at: new Date().toISOString() }, { onConflict: "id" });
+    setResults({ ...OFFICIAL_RESULTS });
     openView("score");
     showDog("Ergebnis aktualisiert!");
   }
 
   async function removePlayer(name) {
     if (!supabase || !name) return;
-
-    const confirmed = confirm(`${name} wirklich entfernen? Die Tipps dieser Person werden ebenfalls gelöscht.`);
-    if (!confirmed) return;
-
+    if (!confirm(`${name} wirklich entfernen? Die Tipps dieser Person werden ebenfalls gelöscht.`)) return;
     await supabase.from("esc2026_predictions").delete().eq("player_name", name);
     await supabase.from("esc2026_players").delete().eq("name", name);
-
     if (currentName === name) {
       localStorage.removeItem("esc2026_currentName");
       setCurrentName("");
       setDraftPrediction({ ...emptyPrediction });
     }
-
-    if (selectedPlayerView === name) {
-      setSelectedPlayerView("");
-    }
-
-    setPlayerMenuOpen("");
+    if (selectedPlayerView === name) setSelectedPlayerView("");
     await refreshAll();
   }
 
-  // Wichtig: Die Auswertung nutzt immer das fest hinterlegte offizielle Ergebnis.
-  // Alte oder leere Ergebnisdaten aus Supabase dürfen die Punkte nicht überschreiben.
   const scoringResults = useMemo(() => ({ ...OFFICIAL_RESULTS }), []);
   const leaderboard = useMemo(() => {
-    const sortedPlayers = players
-      .map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, scoringResults) }))
-      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
-
-    return sortedPlayers.map((player, index, list) => ({
-      ...player,
-      rank: getRank(index, list),
-    }));
+    const sortedPlayers = players.map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, scoringResults) })).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+    return sortedPlayers.map((player, index, list) => ({ ...player, rank: getRank(index, list) }));
   }, [players, predictions, scoringResults]);
+
   const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
@@ -571,9 +432,7 @@ export default function ESC2026Tippspiel() {
             </motion.header>
 
             <div className="mb-5 flex flex-wrap gap-2">
-              {navItems.map(({ id, label, icon: Icon }) => (
-                <Button key={id} onClick={() => openView(id)} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>
-              ))}
+              {navItems.map(({ id, label, icon: Icon }) => <Button key={id} onClick={() => openView(id)} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>)}
             </div>
 
             {!currentName && view === "vote" && (
@@ -590,10 +449,7 @@ export default function ESC2026Tippspiel() {
             {currentName && view === "vote" && (
               <Card className="p-6">
                 <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <h2 className="text-3xl font-black">Tipps von {currentName} <span className="text-yellow-300">♛</span></h2>
-                    <p className="text-white/90">Jede Auswahl wird automatisch gespeichert. Platz 1 ist automatisch dein Siegertipp.</p>
-                  </div>
+                  <div><h2 className="text-3xl font-black">Tipps von {currentName} <span className="text-yellow-300">♛</span></h2><p className="text-white/90">Jede Auswahl wird automatisch gespeichert. Platz 1 ist automatisch dein Siegertipp.</p></div>
                   <Button onClick={() => { localStorage.removeItem("esc2026_currentName"); setCurrentName(""); }} className="bg-white/20 text-white hover:bg-white/30"><Users className="mr-2 h-4 w-4" />Als anderen wählen</Button>
                 </div>
                 <div className="grid gap-4 md:grid-cols-5">
@@ -608,18 +464,9 @@ export default function ESC2026Tippspiel() {
 
             {view === "results" && (
               <Card className="p-6">
-                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div><h2 className="text-3xl font-black">Offizielles Ergebnis</h2><p className="text-white/80">Top 5 und letzter Platz mit Flaggen, Künstler:innen, Song und Kurzinfos.</p></div>
-                  <Button onClick={applyOfficialResults} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Trophy className="mr-2 h-4 w-4" />Ergebnis übernehmen</Button>
-                </div>
+                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div><h2 className="text-3xl font-black">Offizielles Ergebnis</h2><p className="text-white/80">Top 5 und letzter Platz mit Flaggen, Künstler:innen, Song und Kurzinfos.</p></div><Button onClick={applyOfficialResults} className="bg-lime-300 px-6 text-slate-950 hover:bg-lime-200"><Trophy className="mr-2 h-4 w-4" />Ergebnis übernehmen</Button></div>
                 <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  {RESULT_STORIES.map((item) => (
-                    <div key={`${item.place}-${item.country}`} className="rounded-[2rem] bg-white/10 p-4">
-                      <ResultFlag country={item.country} />
-                      <div className="mt-4"><div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div><h3 className="text-2xl font-black">{item.country}</h3><p className="font-bold text-white/90">{item.artist} · “{item.song}”</p></div>
-                      <p className="mt-3 text-sm leading-relaxed text-white/85">{item.summary}</p>
-                    </div>
-                  ))}
+                  {RESULT_STORIES.map((item) => <div key={`${item.place}-${item.country}`} className="rounded-[2rem] bg-white/10 p-4"><ResultFlag country={item.country} /><div className="mt-4"><div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div><h3 className="text-2xl font-black">{item.country}</h3><p className="font-bold text-white/90">{item.artist} · “{item.song}”</p></div><p className="mt-3 text-sm leading-relaxed text-white/85">{item.summary}</p></div>)}
                 </div>
               </Card>
             )}
@@ -628,99 +475,35 @@ export default function ESC2026Tippspiel() {
 
             {view === "archive" && (
               <Card className="p-6">
-                <div className="mb-6 flex items-center gap-3">
-                  <Archive className="h-8 w-8 text-yellow-200" />
-                  <div>
-                    <h2 className="text-4xl font-black">Archiv</h2>
-                    <p className="text-white/80">Alle abgeschlossenen ESC-Jahre werden hier gesammelt. Das aktuelle Ergebnis ist als Archivbild unter ESC 2026 abgelegt.</p>
-                  </div>
-                </div>
-
+                <div className="mb-6 flex items-center gap-3"><Archive className="h-8 w-8 text-yellow-200" /><div><h2 className="text-4xl font-black">Archiv</h2><p className="text-white/80">Alle abgeschlossenen ESC-Jahre werden hier gesammelt. Das aktuelle Ergebnis ist als Archivbild unter ESC 2026 abgelegt.</p></div></div>
                 <div className="rounded-[2.5rem] border border-white/20 bg-gradient-to-br from-fuchsia-500/35 via-purple-700/40 to-cyan-400/25 p-6 shadow-2xl">
-                  <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                    <div>
-                      <div className="mb-2 inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-black">Archivbild</div>
-                      <h3 className="text-5xl font-black leading-none">ESC 2026</h3>
-                      <p className="mt-2 text-white/80">Offizielles Hundefreunde-Wettstudio Ergebnis</p>
-                    </div>
-                    <div className="rounded-3xl bg-yellow-300 px-6 py-4 text-right text-slate-950">
-                      <div className="text-xs font-black uppercase tracking-widest">Sieger</div>
-                      <div className="text-3xl font-black">🇧🇬 Bulgaria</div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {RESULT_STORIES.map((item) => (
-                      <div key={`archive-${item.country}`} className="rounded-[2rem] bg-white/15 p-5">
-                        <div className="mb-3 flex items-center gap-4">
-                          <div className="text-5xl">{COUNTRY_FLAGS[item.country] || "🏳️"}</div>
-                          <div>
-                            <div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div>
-                            <div className="text-2xl font-black">{item.country}</div>
-                          </div>
-                        </div>
-                        <div className="font-bold text-white/90">{item.artist}</div>
-                        <div className="text-sm text-white/80">“{item.song}”</div>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"><div><div className="mb-2 inline-flex rounded-full bg-white/20 px-4 py-2 text-sm font-black">Archivbild</div><h3 className="text-5xl font-black leading-none">ESC 2026</h3><p className="mt-2 text-white/80">Offizielles Hundefreunde-Wettstudio Ergebnis</p></div><div className="rounded-3xl bg-yellow-300 px-6 py-4 text-right text-slate-950"><div className="text-xs font-black uppercase tracking-widest">Sieger</div><div className="text-3xl font-black">🇧🇬 Bulgaria</div></div></div>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{RESULT_STORIES.map((item) => <div key={`archive-${item.country}`} className="rounded-[2rem] bg-white/15 p-5"><div className="mb-3 flex items-center gap-4"><div className="text-5xl">{COUNTRY_FLAGS[item.country] || "🏳️"}</div><div><div className="text-sm font-black text-cyan-200">{typeof item.place === "number" ? `${item.place}. Platz` : item.place}</div><div className="text-2xl font-black">{item.country}</div></div></div><div className="font-bold text-white/90">{item.artist}</div><div className="text-sm text-white/80">“{item.song}”</div></div>)}</div>
                 </div>
               </Card>
             )}
 
             {view === "score" && (
               <>
-                <div key={scoreCelebrationKey} className="pointer-events-none fixed inset-0 z-[80] overflow-hidden">
-                  <CelebrationEffect type="confetti" />
-                  <CelebrationEffect type="lightbeams" />
-                </div>
+                <div key={scoreCelebrationKey} className="pointer-events-none fixed inset-0 z-[80] overflow-hidden"><CelebrationEffect type="confetti" /><CelebrationEffect type="lightbeams" /></div>
                 <div className="space-y-6">
-                <Card className="p-6">
-                  <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Das Ranking wird automatisch aus allen gespeicherten Tipps und dem offiziellen Ergebnis berechnet. Jede Änderung aktualisiert die Punkte sofort.</p></div>
-                    {leaderboard[0] && (
-                      <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950">
-                        <div className="text-sm font-black uppercase tracking-widest">Aktuelle Gewinner:innen</div>
-                        <div className="text-4xl font-black">
-                          {leaderboard.filter((p) => p.rank === 1).map((p) => p.name).join(" & ")}
-                        </div>
-                        <div className="text-xl font-bold">{leaderboard[0].total} Punkte</div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid gap-4">
-                    {leaderboard.map((player, idx) => (
-                      <div key={player.name} className="rounded-[2rem] bg-white/10 p-4">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{player.rank}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div></div></div>
-                          <div className="text-right"><div className="text-3xl font-black">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div>
-                        </div>
-                        <div className="mb-3 h-4 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(4, (player.total / maxScore) * 100)}%` }} /></div>
-                        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-                          {player.rows.map((row) => (
-                            <div key={row.label} className={`rounded-2xl p-3 text-sm ${row.correct ? "bg-lime-300 text-slate-950" : row.partial ? "bg-yellow-300 text-slate-950" : "bg-white/10 text-white"}`}>
-                              <div className="mb-1 flex items-center justify-between"><b>{row.label}</b><span className="font-black">{row.points}</span></div>
-                              <div className="truncate opacity-90">{entryLabel(row.pick) || "–"}</div>
-                              <div className="mt-1 text-xs font-bold opacity-80">{row.reason}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
+                  <Card className="p-6">
+                    <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Das Ranking wird automatisch aus allen gespeicherten Tipps und dem offiziellen Ergebnis berechnet. Jede Änderung aktualisiert die Punkte sofort.</p></div>
+                      {leaderboard[0] && <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950"><div className="text-sm font-black uppercase tracking-widest">Aktuelle Gewinner:innen</div><div className="text-4xl font-black">{leaderboard.filter((p) => p.rank === 1).map((p) => p.name).join(" & ")}</div><div className="text-xl font-bold">{leaderboard[0].total} Punkte</div></div>}
+                    </div>
+                    <div className="grid gap-4">
+                      {leaderboard.map((player) => <div key={player.name} className="rounded-[2rem] bg-white/10 p-4"><div className="mb-3 flex items-center justify-between gap-3"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{player.rank}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div></div></div><div className="text-right"><div className="text-3xl font-black">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div></div><div className="mb-3 h-4 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(4, (player.total / maxScore) * 100)}%` }} /></div><div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">{player.rows.map((row) => <div key={row.label} className={`rounded-2xl p-3 text-sm ${row.correct ? "bg-lime-300 text-slate-950" : row.partial ? "bg-yellow-300 text-slate-950" : "bg-white/10 text-white"}`}><div className="mb-1 flex items-center justify-between"><b>{row.label}</b><span className="font-black">{row.points}</span></div><div className="truncate opacity-90">{entryLabel(row.pick) || "–"}</div><div className="mt-1 text-xs font-bold opacity-80">{row.reason}</div></div>)}</div></div>)}
+                    </div>
+                  </Card>
                 </div>
               </>
             )}
 
             {selectedPlayerView && (
               <Card className="mt-5 p-6">
-                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-3"><Eye className="h-7 w-7 text-cyan-200" /><div><h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2><p className="text-white/80">Alle können die Tipps live ansehen.</p></div></div>
-                  <Button onClick={() => editAsPlayer(selectedPlayerView)} className="bg-white/20 text-white hover:bg-white/30">Diese Tipps bearbeiten</Button>
-                </div>
-                <div className="grid gap-4 md:grid-cols-5">{[1,2,3,4,5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div><div className="min-h-[90px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}</div></div>; })}</div>
+                <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"><div className="flex items-center gap-3"><Eye className="h-7 w-7 text-cyan-200" /><div><h2 className="text-3xl font-black">Tipps von {selectedPlayerView}</h2><p className="text-white/80">Alle können die Tipps live ansehen.</p></div></div><Button onClick={() => editAsPlayer(selectedPlayerView)} className="bg-white/20 text-white hover:bg-white/30">Diese Tipps bearbeiten</Button></div>
+                <div className="grid gap-4 md:grid-cols-5">{[1, 2, 3, 4, 5].map((n) => { const key = `top${n}`; return <div key={key} className="rounded-3xl bg-white/10 p-4"><div className="mb-2 text-sm font-black text-white/80">{n}. Platz</div><div className="min-h-[90px] rounded-2xl bg-white/95 p-4 text-sm font-bold text-slate-900">{entryLabel(viewedPrediction[key]) || "Noch kein Tipp"}</div></div>; })}</div>
                 <div className="mt-4 grid gap-4 md:grid-cols-2"><div className="rounded-3xl bg-yellow-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Siegertipp</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.top1) || "Noch kein Tipp"}</div></div><div className="rounded-3xl bg-cyan-300/20 p-4"><div className="mb-2 text-sm font-black text-white/80">Letzter Platz</div><div className="rounded-2xl bg-white/95 p-4 font-bold text-slate-900">{entryLabel(viewedPrediction.last) || "Noch kein Tipp"}</div></div></div>
               </Card>
             )}
@@ -731,26 +514,33 @@ export default function ESC2026Tippspiel() {
               <div className="mb-4 flex items-center gap-2"><Users className="h-6 w-6" /><h2 className="text-2xl font-black">Mitspieler:innen ({players.length})</h2></div>
               <p className="mb-4 text-sm text-white/80">Namen anklicken, um Tipps anzusehen.</p>
               <div className="max-h-[720px] space-y-2 overflow-auto pr-1">
-                {players.length === 0 ? (
-                  <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div>
-                ) : players.map((name, idx) => (
+                {players.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm">Noch niemand angemeldet.</div> : players.map((name, idx) => (
                   <div key={name} className={`relative flex w-full items-center gap-2 rounded-2xl p-2 transition ${name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white hover:bg-white/20"}`}>
-                    <button onClick={() => selectPlayer(name)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <button type="button" onClick={() => selectPlayer(name)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/90 text-xl">{idx % 3 === 0 ? "🐶" : idx % 3 === 1 ? "🐕" : "🌭"}</div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div>
-                        <div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div>
-                      </div>
+                      <div className="min-w-0 flex-1"><div className="truncate text-lg font-black">{name} {idx === 0 ? "👑" : ""}</div><div className="text-xs opacity-80">{predictions[name] ? "Tippzettel vorhanden" : "Neu angemeldet"}</div></div>
                       <ChevronsRight className="h-5 w-5 opacity-70" />
                     </button>
+                    <button type="button" onClick={(event) => { event.stopPropagation(); removePlayer(name); }} className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-black transition ${name === currentName ? "bg-red-500/20 text-slate-950 hover:bg-red-500/35" : "bg-red-500/20 text-white hover:bg-red-500/35"}`} aria-label={`${name} entfernen`}>
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </aside>
 
-                    <button
-                      type="button"
-                      onClick={async (event) => {
-                        event.stopPropagation();
-                        await removePlayer(name);
-                      }}
-                      className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-black transition ${
-                        name === currentName
-                          ? "bg-red-500/20 text-slate-950 hover:bg-red-500/35"
-             
+          <aside className="xl:sticky xl:top-6 xl:self-start">
+            <Card className="flex min-h-[680px] flex-col p-5">
+              <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-6 w-6" /><h2 className="text-2xl font-black">Live-Chat</h2></div>
+              <div className="mb-4 flex-1 space-y-3 overflow-auto rounded-3xl bg-black/15 p-3">
+                {chatMessages.length === 0 ? <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Noch keine Nachrichten.</div> : chatMessages.map((m) => <div key={m.id} className={`rounded-2xl p-3 ${m.player_name === currentName ? "bg-lime-300 text-slate-950" : "bg-white/10 text-white"}`}><div className="mb-1 text-xs font-black opacity-80">{m.player_name}</div><div className="text-sm font-semibold">{m.message}</div></div>)}
+              </div>
+              {currentName ? <div className="grid grid-cols-[1fr_auto] gap-2"><input value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendChat()} placeholder="Nachricht schreiben…" className="rounded-2xl border border-white/30 bg-white/95 px-4 py-3 text-slate-900 outline-none focus:ring-4 focus:ring-fuchsia-300" /><Button onClick={sendChat} className="bg-fuchsia-500 text-white hover:bg-fuchsia-600"><Send className="h-5 w-5" /></Button></div> : <div className="rounded-2xl bg-white/10 p-4 text-sm text-white/80">Zum Chatten bitte erst mit Namen anmelden.</div>}
+            </Card>
+          </aside>
+        </div>
+      </div>
+    </main>
+  );
+}
