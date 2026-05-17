@@ -323,6 +323,7 @@ export default function ESC2026Tippspiel() {
   const [dogMessage, setDogMessage] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
+  const [scoreCelebrationKey, setScoreCelebrationKey] = useState(0);
 
   function showDog(message = "Gespeichert!") {
     const dog = DOG_VARIANTS[Math.floor(Math.random() * DOG_VARIANTS.length)];
@@ -330,6 +331,21 @@ export default function ESC2026Tippspiel() {
     setDogMessage(message);
     setActiveDog({ ...dog, effect });
     setTimeout(() => { setActiveDog(null); setDogMessage(""); }, 2300);
+  }
+
+  function openView(nextView) {
+    setView(nextView);
+    if (nextView === "score") {
+      setScoreCelebrationKey((value) => value + 1);
+    }
+  }
+
+  function getRank(index, sortedPlayers) {
+    if (index === 0) return 1;
+    const current = sortedPlayers[index];
+    const previous = sortedPlayers[index - 1];
+    if (current.total === previous.total) return previous.rank;
+    return index + 1;
   }
 
   async function savePrediction(next, message = "Tipps automatisch gespeichert!") {
@@ -469,7 +485,7 @@ export default function ESC2026Tippspiel() {
 
   async function applyOfficialResults() {
     await updateResults(OFFICIAL_RESULTS);
-    setView("score");
+    openView("score");
     showDog("Ergebnis aktualisiert!");
   }
 
@@ -491,12 +507,16 @@ export default function ESC2026Tippspiel() {
   // Wichtig: Die Auswertung nutzt immer das fest hinterlegte offizielle Ergebnis.
   // Alte oder leere Ergebnisdaten aus Supabase dürfen die Punkte nicht überschreiben.
   const scoringResults = useMemo(() => ({ ...OFFICIAL_RESULTS }), []);
-  const leaderboard = useMemo(
-    () => players
+  const leaderboard = useMemo(() => {
+    const sortedPlayers = players
       .map((name) => ({ name, ...scorePrediction(predictions[name] || emptyPrediction, scoringResults) }))
-      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name)),
-    [players, predictions, scoringResults]
-  );
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
+    return sortedPlayers.map((player, index, list) => ({
+      ...player,
+      rank: getRank(index, list),
+    }));
+  }, [players, predictions, scoringResults]);
   const maxScore = Math.max(1, ...leaderboard.map((p) => p.total));
   const usedTop = [draftPrediction.top1, draftPrediction.top2, draftPrediction.top3, draftPrediction.top4, draftPrediction.top5].filter(Boolean);
   const viewedPrediction = predictions[selectedPlayerView] || emptyPrediction;
@@ -531,7 +551,7 @@ export default function ESC2026Tippspiel() {
 
             <div className="mb-5 flex flex-wrap gap-2">
               {navItems.map(({ id, label, icon: Icon }) => (
-                <Button key={id} onClick={() => setView(id)} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>
+                <Button key={id} onClick={() => openView(id)} className={view === id ? "bg-white text-fuchsia-700 hover:bg-white" : "bg-white/20 text-white hover:bg-white/30"}><Icon className="mr-2 h-4 w-4" />{label}</Button>
               ))}
               <Button onClick={resetAll} className="bg-black/25 text-white hover:bg-black/40"><RotateCcw className="mr-2 h-4 w-4" />Reset</Button>
             </div>
@@ -587,18 +607,30 @@ export default function ESC2026Tippspiel() {
             {view === "points" && <PointsOverview />}
 
             {view === "score" && (
+              <div key={scoreCelebrationKey} className="pointer-events-none fixed inset-0 z-[80] overflow-hidden">
+                <CelebrationEffect type="confetti" />
+                <CelebrationEffect type="lightbeams" />
+              </div>
               <div className="space-y-6">
                 <Card className="p-6">
                   <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Das Ranking wird automatisch aus allen gespeicherten Tipps und dem offiziellen Ergebnis berechnet. Jede Änderung aktualisiert die Punkte sofort.</p></div>
-                    {leaderboard[0] && <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950"><div className="text-sm font-black uppercase tracking-widest">Aktuelle:r Gewinner:in</div><div className="text-4xl font-black">{leaderboard[0].name}</div><div className="text-xl font-bold">{leaderboard[0].total} Punkte</div></div>}
+                    {leaderboard[0] && (
+                      <div className="rounded-[2rem] bg-yellow-300 p-5 text-slate-950">
+                        <div className="text-sm font-black uppercase tracking-widest">Aktuelle Gewinner:innen</div>
+                        <div className="text-4xl font-black">
+                          {leaderboard.filter((p) => p.rank === 1).map((p) => p.name).join(" & ")}
+                        </div>
+                        <div className="text-xl font-bold">{leaderboard[0].total} Punkte</div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid gap-4">
                     {leaderboard.map((player, idx) => (
                       <div key={player.name} className="rounded-[2rem] bg-white/10 p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{idx + 1}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div></div></div>
+                          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{player.rank}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div></div></div>
                           <div className="text-right"><div className="text-3xl font-black">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div>
                         </div>
                         <div className="mb-3 h-4 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(4, (player.total / maxScore) * 100)}%` }} /></div>
