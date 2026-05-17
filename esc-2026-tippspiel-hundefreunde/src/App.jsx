@@ -344,7 +344,7 @@ export default function ESC2026Tippspiel() {
     if (index === 0) return 1;
     const current = sortedPlayers[index];
     const previous = sortedPlayers[index - 1];
-    if (current.total === previous.total) return previous.rank;
+    if (current.total === previous.total) return getRank(index - 1, sortedPlayers);
     return index + 1;
   }
 
@@ -607,11 +607,12 @@ export default function ESC2026Tippspiel() {
             {view === "points" && <PointsOverview />}
 
             {view === "score" && (
-              <div key={scoreCelebrationKey} className="pointer-events-none fixed inset-0 z-[80] overflow-hidden">
-                <CelebrationEffect type="confetti" />
-                <CelebrationEffect type="lightbeams" />
-              </div>
-              <div className="space-y-6">
+              <>
+                <div key={scoreCelebrationKey} className="pointer-events-none fixed inset-0 z-[80] overflow-hidden">
+                  <CelebrationEffect type="confetti" />
+                  <CelebrationEffect type="lightbeams" />
+                </div>
+                <div className="space-y-6">
                 <Card className="p-6">
                   <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div><h2 className="text-4xl font-black">Auswertung</h2><p className="text-white/80">Das Ranking wird automatisch aus allen gespeicherten Tipps und dem offiziellen Ergebnis berechnet. Jede Änderung aktualisiert die Punkte sofort.</p></div>
@@ -647,7 +648,8 @@ export default function ESC2026Tippspiel() {
                     ))}
                   </div>
                 </Card>
-              </div>
+                </div>
+              </>
             )}
 
             {selectedPlayerView && (
