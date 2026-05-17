@@ -680,6 +680,7 @@ export default function ESC2026Tippspiel() {
                           <div key={`archive-player-${player.name}`} className="rounded-2xl bg-white/12 p-4">
                             <div className="mb-2 flex items-center justify-between gap-3">
                               <div className="flex items-center gap-3">
+                                <ProfileDogAvatar dogId={profilePictures[player.name] || DEFAULT_PROFILE_DOG_ID} name={player.name} size="sm" />
                                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-xl font-black text-fuchsia-700">{player.rank}</div>
                                 <div>
                                   <div className="text-2xl font-black">{player.name}</div>
@@ -694,9 +695,4 @@ export default function ESC2026Tippspiel() {
                             <div className="h-3 overflow-hidden rounded-full bg-black/30">
                               <div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(5, (player.total / maxScore) * 100)}%` }} />
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div
+              
