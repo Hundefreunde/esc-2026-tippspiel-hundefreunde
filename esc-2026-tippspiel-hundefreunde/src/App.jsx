@@ -90,18 +90,12 @@ const OFFICIAL_RESULTS = {
   last: "United Kingdom",
 };
 
-// Für die 5-Punkte-Regel. Falls du Platz 6 bis 10 später ergänzen willst, hier einfach austauschen/erweitern.
-const OFFICIAL_TOP10 = [
-  "Bulgaria",
-  "Israel",
-  "Romania",
-  "Australia",
-  "Italy",
-  "France",
-  "Denmark",
-  "Sweden",
-  "Norway",
-  "Austria",
+const OFFICIAL_TOP5 = [
+  OFFICIAL_RESULTS.top1,
+  OFFICIAL_RESULTS.top2,
+  OFFICIAL_RESULTS.top3,
+  OFFICIAL_RESULTS.top4,
+  OFFICIAL_RESULTS.top5,
 ];
 
 const RESULT_STORIES = [
@@ -250,11 +244,11 @@ function scorePrediction(prediction, results) {
       if (exactMap[key] === pick) {
         points = 10;
         reason = "Top-5-Act auf richtigem Platz";
-      } else if (OFFICIAL_TOP10.includes(pick)) {
+      } else if (top5.includes(pick)) {
         points = 5;
-        reason = "Act in den Top 10, aber anderer Platz";
+        reason = "Top-5-Treffer, aber anderer Platz";
       } else {
-        reason = "nicht in den Top 10";
+        reason = "nicht in den Top 5";
       }
     }
 
@@ -282,7 +276,7 @@ function PointsOverview() {
     { points: 30, title: "Richtiger Siegertipp", desc: "Dein Platz-1-Tipp ist automatisch dein Siegertipp." },
     { points: 20, title: "Richtiger letzter Platz", desc: "Du hast den Act auf dem letzten Platz korrekt getippt." },
     { points: 10, title: "Top 5 exakt", desc: "Ein Act ist in den Top 5 und genau auf dem richtigen Platz." },
-    { points: 5, title: "Top 10 Treffer", desc: "Ein Act ist in den Top 10, aber auf einem anderen Platz als getippt." },
+    { points: 5, title: "Top 5 Treffer", desc: "Ein Act ist in den Top 5, aber auf einem anderen Platz als getippt." },
   ];
   return (
     <Card className="p-6">
@@ -568,7 +562,7 @@ export default function ESC2026Tippspiel() {
                     {leaderboard.map((player, idx) => (
                       <div key={player.name} className="rounded-[2rem] bg-white/10 p-4">
                         <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{idx + 1}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-10-Treffer</div></div></div>
+                          <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl font-black text-fuchsia-700">{idx + 1}</div><div><div className="text-2xl font-black">{player.name}</div><div className="text-sm text-white/75">{player.exact} Volltreffer · {player.partial} Top-5-Treffer</div></div></div>
                           <div className="text-right"><div className="text-3xl font-black">{player.total}</div><div className="text-xs font-bold uppercase tracking-widest text-white/70">Punkte</div></div>
                         </div>
                         <div className="mb-3 h-4 overflow-hidden rounded-full bg-black/25"><div className="h-full rounded-full bg-gradient-to-r from-lime-300 via-yellow-300 to-fuchsia-300" style={{ width: `${Math.max(4, (player.total / maxScore) * 100)}%` }} /></div>
