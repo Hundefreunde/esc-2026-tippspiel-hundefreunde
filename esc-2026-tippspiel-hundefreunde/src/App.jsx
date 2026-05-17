@@ -1,5 +1,6 @@
  import React, { useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart3,
   ChevronsRight,
